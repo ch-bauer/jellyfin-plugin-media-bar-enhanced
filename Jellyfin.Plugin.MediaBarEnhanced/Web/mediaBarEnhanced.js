@@ -742,7 +742,9 @@ const SlideUtils = {
             iv_load_policy: 3,
             rel: 0,
             playsinline: 1,
-            origin: window.location.origin
+            origin: window.location.origin,
+            widget_referrer: window.location.href,
+            enablejsapi: 1
           }
         });
       });
@@ -1338,7 +1340,7 @@ const ApiUtils = {
   /**
    * Fetches the first local trailer for an item
    * @param {string} itemId - Item ID
-   * @returns {Promise<string|null>} Stream URL or null
+   * @returns {Promise<Object|null>} Trailer data object {id, url} or null
    */
   async fetchLocalTrailer(itemId) {
     try {
@@ -1358,8 +1360,11 @@ const ApiUtils = {
         const trailer = trailers[0];
         const mediaSourceId = trailer.MediaSources && trailer.MediaSources[0] ? trailer.MediaSources[0].Id : trailer.Id;
         
-        // Construct stream URL
-        return `${STATE.jellyfinData.serverAddress}/Videos/${trailer.Id}/stream.mp4?Static=true&mediaSourceId=${mediaSourceId}&api_key=${STATE.jellyfinData.accessToken}`;
+        // Return object with ID and URL
+        return {
+            id: trailer.Id,
+            url: `${STATE.jellyfinData.serverAddress}/Videos/${trailer.Id}/stream.mp4?Static=true&mediaSourceId=${mediaSourceId}&api_key=${STATE.jellyfinData.accessToken}`
+        };
       }
       return null;
     } catch (error) {
@@ -1571,8 +1576,24 @@ const SlideCreator = {
 
     // 1a. Custom URL override
     if (STATE.slideshow.customTrailerUrls && STATE.slideshow.customTrailerUrls[itemId]) {
-      trailerUrl = STATE.slideshow.customTrailerUrls[itemId];
-      console.log(`Using custom trailer URL for ${itemId}: ${trailerUrl}`);
+      const customValue = STATE.slideshow.customTrailerUrls[itemId];
+      
+      // Check if the custom value is a Jellyfin Item ID (GUID)
+      const guidMatch = customValue.match(/^([0-9a-f]{32})$/i);
+      
+      if (guidMatch) {
+          const videoId = guidMatch[1];
+          console.log(`Using custom local video ID for ${itemId}: ${videoId}`);
+          
+          trailerUrl = {
+              id: videoId,
+              url: `${STATE.jellyfinData.serverAddress}/Videos/${videoId}/stream.mp4?Static=true&api_key=${STATE.jellyfinData.accessToken}`
+          };
+      } else {
+          // Assume it's a standard URL (YouTube, etc.)
+          trailerUrl = customValue;
+          console.log(`Using custom trailer URL for ${itemId}: ${trailerUrl}`);
+      }
     } 
     // 1b. Check Local Trailer if preferred
     else if (CONFIG.preferLocalTrailers && item.LocalTrailerCount > 0 && item.localTrailerUrl) {
@@ -1597,12 +1618,17 @@ const SlideCreator = {
       let videoId = null;
 
       try {
-        const urlObj = new URL(trailerUrl);
-        if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        let urlToCheck = trailerUrl;
+        if (typeof trailerUrl === 'object' && trailerUrl.url) {
+            urlToCheck = trailerUrl.url;
+        }
+
+        const urlObjChecked = new URL(urlToCheck);
+        if (urlObjChecked.hostname.includes('youtube.com') || urlObjChecked.hostname.includes('youtu.be')) {
           isYoutube = true;
-          videoId = urlObj.searchParams.get('v');
-          if (!videoId && urlObj.hostname.includes('youtu.be')) {
-            videoId = urlObj.pathname.substring(1);
+          videoId = urlObjChecked.searchParams.get('v');
+          if (!videoId && urlObjChecked.hostname.includes('youtu.be')) {
+            videoId = urlObjChecked.pathname.substring(1);
           }
         }
       } catch (e) {
@@ -1633,7 +1659,9 @@ const SlideCreator = {
               rel: 0,
               loop: 0,
               playsinline: 1,
-              origin: window.location.origin
+              origin: window.location.origin,
+              widget_referrer: window.location.href,
+              enablejsapi: 1
             };
 
             // Determine video quality
@@ -1746,7 +1774,7 @@ const SlideCreator = {
 
         const videoAttributes = {
           className: "backdrop video-backdrop",
-          src: trailerUrl,
+          src: (typeof trailerUrl === 'object' ? trailerUrl.url : trailerUrl),
           autoplay: false,
           preload: "auto",
           loop: false,
@@ -2037,11 +2065,20 @@ const SlideCreator = {
 
   /**
    * Creates a trailer button
-   * @param {string} url - Trailer URL
+   * @param {string|Object} trailerInfo - Trailer URL string or object {id, url}
    * @returns {HTMLElement} Trailer button element
    */
-  createTrailerButton(url) {
+  createTrailerButton(trailerInfo) {
     const trailerText = LocalizationUtils.getLocalizedString('Trailer', 'Trailer');
+    
+    let url = trailerInfo;
+    let localTrailerId = null;
+
+    if (typeof trailerInfo === 'object' && trailerInfo !== null) {
+        url = trailerInfo.url;
+        localTrailerId = trailerInfo.id;
+    }
+
     return SlideUtils.createElement("button", {
       className: "detailButton trailer-button",
       innerHTML: `<span class="material-icons">movie</span> <span class="trailer-text">${trailerText}</span>`,
@@ -2049,7 +2086,13 @@ const SlideCreator = {
       onclick: (e) => {
         e.preventDefault();
         e.stopPropagation();
-        SlideUtils.openVideoModal(url);
+        
+        if (localTrailerId) {
+            // Play local trailer using native player
+            ApiUtils.playItem(localTrailerId);
+        } else {
+            SlideUtils.openVideoModal(url);
+        }
       },
     });
   },
