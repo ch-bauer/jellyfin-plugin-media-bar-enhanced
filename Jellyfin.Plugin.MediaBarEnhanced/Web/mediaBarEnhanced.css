@@ -175,6 +175,7 @@
   overflow: hidden;
   margin: 0 auto;
   pointer-events: auto;
+  outline: none;
 }
 
 #slides-container[style*="display: none"],
@@ -994,4 +995,8 @@
 
 .dots-container .slide-counter {
   margin: 0;
+}
+
+.layout-tv .backdrop-container{
+  top: -5%;
 }
