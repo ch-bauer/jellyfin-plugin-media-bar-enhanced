@@ -34,8 +34,10 @@ namespace Jellyfin.Plugin.MediaBarEnhanced.Configuration
         public bool EnableCustomMediaIds { get; set; } = true;
         public string PreferredVideoQuality { get; set; } = "Auto";
         public bool EnableSeasonalContent { get; set; } = false;
+        public string SeasonalSections { get; set; } = "[]";
         public bool IsEnabled { get; set; } = true;
         public bool EnableClientSideSettings { get; set; } = false;
+        public bool ApplyLimitsToCustomIds { get; set; } = false;
         public string SortBy { get; set; } = "Random";
         public string SortOrder { get; set; } = "Ascending";
     }

@@ -57,6 +57,8 @@ const CONFIG = {
   enableClientSideSettings: false,
   sortBy: "Random",
   sortOrder: "Ascending",
+  applyLimitsToCustomIds: false,
+  seasonalSections: "[]",
 };
 
 // State management
@@ -611,7 +613,8 @@ const SlideUtils = {
     if (!container) {
       container = this.createElement("div", { 
         id: "slides-container",
-        className: "noautofocus"
+        className: "noautofocus",
+        tabIndex: "-1"
       });
       document.body.appendChild(container);
     }
@@ -1255,9 +1258,20 @@ const ApiUtils = {
    */
   async fetchSponsorBlockData(videoId) {
     if (!CONFIG.useSponsorBlock) return { intro: null, outro: null };
+
+    // Return cached result if available
+    if (!this._sponsorBlockCache) this._sponsorBlockCache = {};
+    if (this._sponsorBlockCache[videoId]) {
+      return this._sponsorBlockCache[videoId];
+    }
+
     try {
       const response = await fetch(`https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}&categories=["intro","outro"]`);
-      if (!response.ok) return { intro: null, outro: null };
+      if (!response.ok) {
+        const result = { intro: null, outro: null };
+        this._sponsorBlockCache[videoId] = result;
+        return result;
+      }
 
       const segments = await response.json();
       let intro = null;
@@ -1271,7 +1285,9 @@ const ApiUtils = {
         }
       });
 
-      return { intro, outro };
+      const result = { intro, outro };
+      this._sponsorBlockCache[videoId] = result;
+      return result;
     } catch (error) {
       console.warn('Error fetching SponsorBlock data:', error);
       return { intro: null, outro: null };
@@ -1316,7 +1332,7 @@ const ApiUtils = {
   async fetchCollectionItems(collectionId) {
     try {
       const response = await fetch(
-        `${STATE.jellyfinData.serverAddress}/Items?ParentId=${collectionId}&Recursive=true&IncludeItemTypes=Movie,Series&fields=Id&userId=${STATE.jellyfinData.userId}`,
+        `${STATE.jellyfinData.serverAddress}/Items?ParentId=${collectionId}&Recursive=true&IncludeItemTypes=Movie,Series&fields=Id,Type&userId=${STATE.jellyfinData.userId}`,
         {
           headers: this.getAuthHeaders(),
         }
@@ -1330,7 +1346,7 @@ const ApiUtils = {
       const data = await response.json();
       const items = data.Items || [];
       console.log(`Resolved collection ${collectionId} to ${items.length} items`);
-      return items.map(i => i.Id);
+      return items.map(i => ({ Id: i.Id, Type: i.Type }));
     } catch (error) {
       console.error(`Error fetching collection items for ${collectionId}:`, error);
       return [];
@@ -1604,6 +1620,11 @@ const SlideCreator = {
     else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
       trailerUrl = item.RemoteTrailers[0].Url;
     }
+    // 1d. Final Fallback to Local Trailer (even if not preferred)
+    else if (item.LocalTrailerCount > 0 && item.localTrailerUrl) {
+         trailerUrl = item.localTrailerUrl;
+         console.log(`Using local trailer fallback for ${itemId}: ${trailerUrl}`);
+    }
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
@@ -1750,14 +1771,18 @@ const SlideCreator = {
                 },
                 'onStateChange': (event) => {
                   if (event.data === YT.PlayerState.ENDED) {
-                    if (CONFIG.waitForTrailerToEnd) {
-                      SlideshowManager.nextSlide();
-                    } else {
-                      event.target.playVideo(); // Loop if not waiting for end if trailer is shorter than slide duration
+                    const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
+                    if (slide && slide.classList.contains('active')) {
+                      if (CONFIG.waitForTrailerToEnd) {
+                        SlideshowManager.nextSlide();
+                      } else {
+                        event.target.playVideo(); // Loop if trailer is shorter than slide duration
+                      }
                     }
                   }
                 },
-                'onError': () => {
+                'onError': (event) => {
+                  console.warn(`YouTube player error ${event.data} for video ${videoId}`);
                   // Fallback to next slide on error
                   if (CONFIG.waitForTrailerToEnd) {
                     SlideshowManager.nextSlide();
@@ -1778,35 +1803,40 @@ const SlideCreator = {
           autoplay: false,
           preload: "auto",
           loop: false,
+          disablePictureInPicture: true,
           style: "object-fit: cover; object-position: center center; width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none;"
         };
 
-        if (STATE.slideshow.isMuted) {
-          videoAttributes.muted = "";
-        }
+        videoAttributes.muted = "";
 
         backdrop = SlideUtils.createElement("video", videoAttributes);
-
-        if (!STATE.slideshow.isMuted) {
-          backdrop.volume = 0.4;
-        }
+        backdrop.volume = 0.4;
 
         STATE.slideshow.videoPlayers[itemId] = backdrop;
 
-        backdrop.addEventListener('play', () => {
+        backdrop.addEventListener('play', (event) => {
+          const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
+          if (!slide || !slide.classList.contains('active')) {
+            console.log(`Local video ${itemId} started playing but slide is not active, pausing.`);
+            event.target.pause();
+            event.target.currentTime = 0;
+            return;
+          }
           if (CONFIG.waitForTrailerToEnd && STATE.slideshow.slideInterval) {
             STATE.slideshow.slideInterval.stop();
           }
         });
 
         backdrop.addEventListener('ended', () => {
-          if (CONFIG.waitForTrailerToEnd) {
-            SlideshowManager.nextSlide();
-          }
+            const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
+            if (slide && slide.classList.contains('active')) {
+              SlideshowManager.nextSlide();
+            }
         });
 
         backdrop.addEventListener('error', () => {
-          if (CONFIG.waitForTrailerToEnd) {
+          const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
+          if (CONFIG.waitForTrailerToEnd && slide && slide.classList.contains('active')) {
             SlideshowManager.nextSlide();
           }
         });
@@ -2266,14 +2296,21 @@ const SlideshowManager = {
       currentSlide.classList.add("active");
 
       // Manage Video Playback: Stop others, Play current
-
-      // 1. Pause all other YouTube players
+      // 1. Stop all other YouTube players and local video elements
       if (STATE.slideshow.videoPlayers) {
         Object.keys(STATE.slideshow.videoPlayers).forEach(id => {
           if (id !== currentItemId) {
             const p = STATE.slideshow.videoPlayers[id];
-            if (p && typeof p.pauseVideo === 'function') {
+            if (!p) return;
+            // YouTube player
+            if (typeof p.pauseVideo === 'function') {
               p.pauseVideo();
+            }
+            // HTML5 <video> element (local trailers)
+            if (p instanceof HTMLVideoElement) {
+              p.pause();
+              p.muted = true;
+              p.currentTime = 0;
             }
           }
         });
@@ -2288,6 +2325,18 @@ const SlideshowManager = {
 
       // 3. Play and Reset current video
       const videoBackdrop = currentSlide.querySelector('.video-backdrop');
+
+      // Auto-unpause when a video slide becomes active
+      if (videoBackdrop && STATE.slideshow.isPaused) {
+          STATE.slideshow.isPaused = false;
+          const pauseButton = document.querySelector('.pause-button');
+          if (pauseButton) {
+              pauseButton.innerHTML = '<i class="material-icons">pause</i>';
+              const pauseLabel = LocalizationUtils.getLocalizedString('ButtonPause', 'Pause');
+              pauseButton.setAttribute("aria-label", pauseLabel);
+              pauseButton.setAttribute("title", pauseLabel);
+          }
+      }
 
       // Update mute button visibility
       const muteButton = document.querySelector('.mute-button');
@@ -2308,8 +2357,8 @@ const SlideshowManager = {
           videoBackdrop.play().catch(e => {
             // Check if it actually started playing after a short delay (handling autoplay blocks)
             setTimeout(() => {
-              if (videoBackdrop.paused) {
-                console.warn(`Autoplay blocked for ${itemId}, attempting muted fallback`);
+              if (videoBackdrop.paused && currentSlide.classList.contains('active')) {
+                console.warn(`Autoplay blocked for ${currentItemId}, attempting muted fallback`);
                 videoBackdrop.muted = true;
                 videoBackdrop.play().catch(err => console.error("Muted fallback failed", err));
               }
@@ -2334,6 +2383,7 @@ const SlideshowManager = {
 
             // Check if playback successfully started, otherwise fallback to muted
             setTimeout(() => {
+              if (!currentSlide.classList.contains('active')) return;
               if (player.getPlayerState &&
                 player.getPlayerState() !== YT.PlayerState.PLAYING &&
                 player.getPlayerState() !== YT.PlayerState.BUFFERING) {
@@ -2358,7 +2408,8 @@ const SlideshowManager = {
         if (backdrop && !backdrop.classList.contains("video-backdrop")) {
           backdrop.classList.add("animate");
         }
-        currentSlide.querySelector(".logo").classList.add("animate");
+        const logo = currentSlide.querySelector(".logo");
+        if (logo) logo.classList.add("animate");
       }
 
       STATE.slideshow.currentSlideIndex = index;
@@ -2383,7 +2434,8 @@ const SlideshowManager = {
       this.updateDots();
 
       // Only restart interval if we are NOT waiting for a video to end
-      const hasVideo = currentSlide.querySelector('.video-backdrop');
+      const hasVideo = currentSlide.querySelector('.video-backdrop') || 
+        (STATE.slideshow.videoPlayers && STATE.slideshow.videoPlayers[currentItemId]);
       if (STATE.slideshow.slideInterval && !STATE.slideshow.isPaused) {
         if (CONFIG.waitForTrailerToEnd && hasVideo) {
           STATE.slideshow.slideInterval.stop();
@@ -2441,18 +2493,31 @@ const SlideshowManager = {
    */
   async preloadAdjacentSlides(currentIndex) {
     const totalItems = STATE.slideshow.totalItems;
-    const preloadCount = CONFIG.preloadCount;
+    const preloadCount = Math.min(Math.max(CONFIG.preloadCount || 1, 1), 5);
+    const preloadedIds = new Set();
 
-    const nextIndex = (currentIndex + 1) % totalItems;
-    const itemId = STATE.slideshow.itemIds[nextIndex];
+    // Preload next slides
+    for (let i = 1; i <= preloadCount; i++) {
+        const nextIndex = (currentIndex + i) % totalItems;
+        if (nextIndex === currentIndex) break;
 
-    await SlideCreator.createSlideForItemId(itemId);
+        const itemId = STATE.slideshow.itemIds[nextIndex];
+        if (!preloadedIds.has(itemId)) {
+             preloadedIds.add(itemId);
+             SlideCreator.createSlideForItemId(itemId);
+        }
+    }
 
-    if (preloadCount > 1) {
-      const prevIndex = (currentIndex - 1 + totalItems) % totalItems;
-      const prevItemId = STATE.slideshow.itemIds[prevIndex];
+    // Preload previous slides
+    for (let i = 1; i <= preloadCount; i++) {
+        const prevIndex = (currentIndex - i + totalItems) % totalItems;
+        if (prevIndex === currentIndex) break;
 
-      SlideCreator.createSlideForItemId(prevItemId);
+        const prevItemId = STATE.slideshow.itemIds[prevIndex];
+        if (!preloadedIds.has(prevItemId)) {
+             preloadedIds.add(prevItemId);
+             SlideCreator.createSlideForItemId(prevItemId);
+        }
     }
   },
 
@@ -2481,12 +2546,18 @@ const SlideshowManager = {
   pruneSlideCache() {
     const currentIndex = STATE.slideshow.currentSlideIndex;
     const keepRange = 5;
+    let prunedAny = false;
 
     Object.keys(STATE.slideshow.createdSlides).forEach((itemId) => {
       const index = STATE.slideshow.itemIds.indexOf(itemId);
       if (index === -1) return;
 
-      const distance = Math.abs(index - currentIndex);
+      const totalItems = STATE.slideshow.itemIds.length;
+      let distance = Math.abs(index - currentIndex);
+      if (totalItems > keepRange * 2) {
+          distance = Math.min(distance, totalItems - distance);
+      }
+
       if (distance > keepRange) {
         // Destroy video player if exists
         if (STATE.slideshow.videoPlayers[itemId]) {
@@ -2505,10 +2576,25 @@ const SlideshowManager = {
         if (slide) slide.remove();
 
         delete STATE.slideshow.createdSlides[itemId];
+        prunedAny = true;
 
         console.log(`Pruned slide ${itemId} at distance ${distance} from view`);
       }
     });
+
+    if (prunedAny) {
+      const isTvMode = (window.layoutManager && window.layoutManager.tv) ||
+        document.documentElement.classList.contains('layout-tv') ||
+        document.body.classList.contains('layout-tv');
+      if (isTvMode) {
+        setTimeout(() => {
+          const container = document.getElementById("slides-container");
+          if (container && container.style.display !== 'none') {
+            container.focus({ preventScroll: true });
+          }
+        }, 0);
+      }
+    }
   },
 
   toggleMute() {
@@ -2656,14 +2742,16 @@ const SlideshowManager = {
       });
     }
 
-    // 2. Pause all HTML5 videos
+    // 2. Stop and mute all HTML5 videos
     const container = document.getElementById("slides-container");
     if (container) {
       container.querySelectorAll('video').forEach(video => {
         try {
           video.pause();
+          video.muted = true;
+          video.currentTime = 0;
         } catch (e) {
-          console.warn("Error pausing HTML5 video:", e);
+          console.warn("Error stopping HTML5 video:", e);
         }
       });
     }
@@ -2681,18 +2769,24 @@ const SlideshowManager = {
     const currentSlide = document.querySelector(`.slide[data-item-id="${currentItemId}"]`);
     if (!currentSlide) return;
 
-    // 1. Try YouTube Player
-    const ytPlayer = STATE.slideshow.videoPlayers[currentItemId];
+    // YouTube player: just resume, don't reload
+    const ytPlayer = STATE.slideshow.videoPlayers?.[currentItemId];
     if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+      if (STATE.slideshow.isMuted) {
+        if (typeof ytPlayer.mute === 'function') ytPlayer.mute();
+      } else {
+        if (typeof ytPlayer.unMute === 'function') ytPlayer.unMute();
+        if (typeof ytPlayer.setVolume === 'function') ytPlayer.setVolume(40);
+      }
       ytPlayer.playVideo();
+      return;
     }
 
-    // 2. Try HTML5 Video
-    const html5Video = currentSlide.querySelector('video');
+    // HTML5 video: just resume, don't reset currentTime
+    const html5Video = currentSlide.querySelector('video.video-backdrop');
     if (html5Video) {
-      if (STATE.slideshow.isMuted) {
-        html5Video.muted = true;
-      }
+      html5Video.muted = STATE.slideshow.isMuted;
+      if (!STATE.slideshow.isMuted) html5Video.volume = 0.4;
       html5Video.play().catch(e => console.warn("Error resuming HTML5 video:", e));
     }
   },
@@ -2840,22 +2934,96 @@ const SlideshowManager = {
   },
 
   /**
-   * Parses custom media IDs, handling seasonal content if enabled
+   * Parses custom media IDs, handling seasonal content if enabled.
+   * If Seasonal Content is enabled:
+   *  - Check if any defined season matches the current date.
+   *  - If match: Return IDs from that season.
+   *  - If NO match: Fall back to Default Custom IDs.
+   * If Custom Media IDs are enabled (and no seasonal match):
+   *  - Return Default Custom IDs.
+   * If no Custom Media IDs are enabled:
+   *  - Return empty array (triggering random fallback).
    * @returns {string[]} Array of media IDs
    */
   parseCustomIds() {
-    if (!CONFIG.enableSeasonalContent) {
-    return CONFIG.customMediaIds
-      .split(/[\n,]/).map((line) => {
+    let idsString = CONFIG.customMediaIds;
+    let usingSeasonal = false;
+
+    if (CONFIG.enableSeasonalContent) {
+      try {
+        const sections = JSON.parse(CONFIG.seasonalSections || "[]");
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1; // 1-12
+        const currentDay = currentDate.getDate(); // 1-31
+
+        for (const section of sections) {
+           const startDay = parseInt(section.StartDay);
+           const startMonth = parseInt(section.StartMonth);
+           const endDay = parseInt(section.EndDay);
+           const endMonth = parseInt(section.EndMonth);
+           
+           let isInRange = false;
+
+           if (startMonth === endMonth) {
+             if (currentMonth === startMonth && currentDay >= startDay && currentDay <= endDay) {
+               isInRange = true;
+             }
+           } else if (startMonth < endMonth) {
+             // Normal range
+             if (
+               (currentMonth > startMonth && currentMonth < endMonth) ||
+               (currentMonth === startMonth && currentDay >= startDay) ||
+               (currentMonth === endMonth && currentDay <= endDay)
+             ) {
+               isInRange = true;
+             }
+           } else {
+             // Wrap around year
+             if (
+               (currentMonth > startMonth || currentMonth < endMonth) ||
+               (currentMonth === startMonth && currentDay >= startDay) ||
+               (currentMonth === endMonth && currentDay <= endDay)
+             ) {
+               isInRange = true;
+             }
+           }
+
+           if (isInRange) {
+             console.log(`Seasonal match found: ${section.Name}`);
+             idsString = section.MediaIds;
+             usingSeasonal = true;
+             break; // Use first matching season
+           }
+        }
+      } catch (e) {
+        console.error("Error parsing seasonal sections in JS:", e);
+      }
+    }
+
+    // If NOT using seasonal content (disabled or no match), 
+    // Custom IDs are disabled, return empty to skip to random
+    if (!usingSeasonal && !CONFIG.enableCustomMediaIds) {
+        return [];
+    }
+    
+    // Parse the resulting string (either seasonal or default)
+    if (!idsString) return [];
+
+    return idsString
+      .split(/[\n,]/)
+      .map((line) => {
         const urlMatch = line.match(/\[(.*?)\]/);
         let id = line;
         if (urlMatch) {
             const url = urlMatch[1];
+            // Remove the [url] part from the ID string for parsing
             id = line.replace(/\[.*?\]/, '').trim();
+            // Attempt to extract GUID if present
             const guidMatch = id.match(/([0-9a-f]{32})/i);
             if (guidMatch) {
                 id = guidMatch[1];
             } else {
+                // Fallback: split by pipe if used
                 id = id.split('|')[0].trim();
             }
             STATE.slideshow.customTrailerUrls[id] = url;
@@ -2864,83 +3032,6 @@ const SlideshowManager = {
       }) 
       .map((id) => id.trim())
       .filter((id) => id);
-    } else {
-      return this.parseSeasonalIds();
-    }
-  },
-
-  /**
-   * Parses custom media IDs, handling seasonal content if enabled
-   * @returns {string[]} Array of media IDs
-   */
-  parseSeasonalIds() {
-    console.log("Using Seasonal Content Mode");
-    const lines = CONFIG.customMediaIds.split('\n');
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1; // 1-12
-    const currentDay = currentDate.getDate(); // 1-31
-    const rawIds = [];
-
-    for (const line of lines) {
-      const match = line.match(/^\s*(\d{1,2})\.(\d{1,2})-(\d{1,2})\.(\d{1,2})\s*\|.*\|(.*)$/) ||
-        line.match(/^\s*(\d{1,2})\.(\d{1,2})-(\d{1,2})\.(\d{1,2})\s*\|(.*)$/);
-
-      if (match) {
-        const startDay = parseInt(match[1]);
-        const startMonth = parseInt(match[2]);
-        const endDay = parseInt(match[3]);
-        const endMonth = parseInt(match[4]);
-        const idsPart = match[5];
-
-        let isInRange = false;
-
-        if (startMonth === endMonth) {
-          if (currentMonth === startMonth && currentDay >= startDay && currentDay <= endDay) {
-            isInRange = true;
-          }
-        } else if (startMonth < endMonth) {
-          // Normal range spanning months (e.g. 15.06 - 15.08)
-          if (
-            (currentMonth > startMonth && currentMonth < endMonth) ||
-            (currentMonth === startMonth && currentDay >= startDay) ||
-            (currentMonth === endMonth && currentDay <= endDay)
-          ) {
-            isInRange = true;
-          }
-        } else {
-          // Wrap around year (e.g. 01.12 - 15.01)
-          if (
-            (currentMonth > startMonth || currentMonth < endMonth) ||
-            (currentMonth === startMonth && currentDay >= startDay) ||
-            (currentMonth === endMonth && currentDay <= endDay)
-          ) {
-            isInRange = true;
-          }
-        }
-
-        if (isInRange) {
-          console.log(`Seasonal match found: ${line}`);
-          const ids = idsPart.split(/[,]/).map(line => {
-              const urlMatch = line.match(/\[(.*?)\]/);
-              let id = line;
-              if (urlMatch) {
-                  const url = urlMatch[1];
-                  id = line.replace(/\[.*?\]/, '').trim();
-                  const guidMatch = id.match(/([0-9a-f]{32})/i);
-                  if (guidMatch) {
-                       id = guidMatch[1];
-                  } else {
-                       id = id.split('|')[0].trim();
-                  }
-                  STATE.slideshow.customTrailerUrls[id] = url;
-              }
-              return id.trim();
-          }).filter(id => id);
-          rawIds.push(...ids);
-        }
-      }
-    }
-    return rawIds;
   },
 
   /**
@@ -2982,10 +3073,10 @@ const SlideshowManager = {
           const children = await ApiUtils.fetchCollectionItems(id);
           finalIds.push(...children);
         } else if (item) {
-          finalIds.push(id);
+          finalIds.push({ Id: item.Id, Type: item.Type });
         }
       } catch (e) {
-        console.warn(`Error resolving item ${id}:`, e);
+        console.warn(`Error resolving item ${rawId}:`, e);
       }
     }
     return finalIds;
@@ -3000,10 +3091,41 @@ const SlideshowManager = {
       let itemIds = [];
 
       // 1. Try Custom Media/Collection IDs from Config & seasonal content
-      if (CONFIG.enableCustomMediaIds && CONFIG.customMediaIds) {
+      if (CONFIG.enableCustomMediaIds || CONFIG.enableSeasonalContent) {
         console.log("Using Custom Media IDs from configuration");
         const rawIds = this.parseCustomIds();
-        itemIds = await this.resolveCollectionsAndItems(rawIds);
+        const resolvedItems = await this.resolveCollectionsAndItems(rawIds);
+
+        // Apply max items limit to custom IDs if enabled
+        if (CONFIG.applyLimitsToCustomIds) {
+            let movieCount = 0;
+            let showCount = 0;
+            let keptItems = [];
+            
+            for (const item of resolvedItems) {
+                 if (keptItems.length >= CONFIG.maxItems) break;
+                 
+                 if (item.Type === 'Movie') {
+                     if (movieCount < CONFIG.maxMovies) {
+                         movieCount++;
+                         keptItems.push(item);
+                     }
+                 } else if (item.Type === 'Series' || item.Type === 'Season' || item.Type === 'Episode') { 
+                     // Count Seasons/Episodes as TV Shows
+                     if (showCount < CONFIG.maxTvShows) {
+                         showCount++;
+                         keptItems.push(item);
+                     }
+                 } else {
+                     // Other types: count towards total only
+                     keptItems.push(item);
+                 }
+            }
+            itemIds = keptItems.map(i => i.Id);
+            console.log(`Applied limits to custom IDs: ${itemIds.length} items (Movies: ${movieCount}, Shows: ${showCount})`);
+        } else {
+            itemIds = resolvedItems.map(i => i.Id);
+        }
       }
 
       // 2. Try Avatar List (list.txt)

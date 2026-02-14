@@ -94,6 +94,7 @@
 
                     <!-- CUSTOM CONTENT TAB -->
                     <div id="custom" class="tab-content" style="display:none;">
+                        <!-- Default Custom Media IDs -->
                         <h2 class="sectionTitle">Custom Media IDs</h2>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label>
@@ -101,61 +102,68 @@
                                     name="EnableCustomMediaIds" />
                                 <span>Enable Custom Media IDs</span>
                             </label>
-                            <div class="fieldDescription">If enabled, the slideshow will try to show the items listed
-                                below. If the list is empty, default behavior (random items) is used. Disable this
-                                to temporarily ignore your custom list without deleting it.</div>
+                            <div class="fieldDescription">If enabled, the slideshow will show the items listed
+                                below as the default content. If the list is empty, random items from your library are used.</div>
                         </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
+                                <input is="emby-checkbox" type="checkbox" id="ApplyLimitsToCustomIds"
+                                    name="ApplyLimitsToCustomIds" />
+                                <span>Apply Limits to Custom IDs</span>
+                            </label>
+                            <div class="fieldDescription">If enabled, the Max Items limit (Advanced &rarr; Content Limits) will also apply to Custom Media IDs and Collections. By default, custom lists are not limited.</div>
+                        </div>
+                        <div id="customMediaIdsContainer">
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="CustomMediaIds">Default Media/Collection/Playlist IDs (Newline or Comma-separated)</label>
+                                <textarea class="emby-textarea" is="emby-textarea" id="CustomMediaIds" name="CustomMediaIds"
+                                    style="width: 100%; height: 150px; font-family: monospace;"></textarea>
+                                <div class="fieldDescription">Enter the IDs of the items you want to show in the slideshow as your default content. You can separate them by new line or comma.
+                                    <br><br>
+                                    <b>Manual Trailer/Video Override:</b> You can specify a YouTube URL <b>OR</b> a Jellyfin Item ID (e.g. for a Theme Video) for an item by adding it in
+                                    brackets: <br> <code>e.g. ID DESCRIPTION [https://youtu.be/...]</code> or <code>ID [JellyfinItemId] DESCRIPTION</code>.
+                                    <br>
+                                    Methods:
+                                    <ul>
+                                        <li><b>YouTube URL:</b> Play a remote trailer from YouTube.</li>
+                                        <li><b>Jellyfin Item ID (GUID):</b> Play the video of another library item (e.g. a Theme Video or Backdrop Video) using the native player.</li>
+                                    </ul>
+                                    You can also add a description after the ID using any separator like space, pipe (|) or dash (-): <br>e.g. <code>ID DESCRIPTION</code> or <code>ID | DESCRIPTION</code>
+                                    <br><br>
+                                    <b>Note:</b> If using a <b>Collection Name</b> (instead of an ID) combined with a description, you <b>MUST</b> use the pipe (|) separator.
+                                    <br>
+                                    <b>Note:</b> The separator <b>MUST NOT</b> be a hex character (0-9, a-f).
+                                </div>
+                                <p>You can find the IDs of your items in the URL of the item page in the web interface.<br>
+                                    Example:
+                                    <code>https://your-jellyfin-url/web/#/details?id=<b style="color:red;">your-item-id</b>&serverId=your-server-id</code><br><br>
+                                    You can also insert a name of a collection or playlist to fetch the IDs of all items in
+                                    it (will take the first hit.<br><b>Note:</b> there is currently no feedback if the name
+                                    resolution succeeded, you will have to look if the bar displays the correct items).
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Seasonal Content -->
+                        <h2 class="sectionTitle" style="margin-top: 2em;">Seasonal Content</h2>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label>
                                 <input is="emby-checkbox" type="checkbox" id="EnableSeasonalContent"
                                     name="EnableSeasonalContent" />
-                                <span>Enable Seasonal Content Mode</span>
+                                <span>Enable Seasonal Content</span>
                             </label>
-                            <div class="fieldDescription">Enable this to define time-based lists in the field below.
-                            </div>
+                            <div class="fieldDescription">When enabled, seasonal sections below will override the default list or random selection
+                                during their active date ranges. If no season matches the current date, the default Custom Media IDs above or random selection are used as fallback.</div>
                         </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="CustomMediaIds">Media/Collection/Playlist
-                                IDs
-                                (Newline or Comma separated)</label>
-                            <textarea is="emby-textarea" id="CustomMediaIds" name="CustomMediaIds"
-                                style="width: 100%; height: 150px; font-family: monospace;"></textarea>
-                            <div class="fieldDescription" id="customMediaIdsDesc">Enter the IDs of the items you want to show in the slideshow.
-                                You can separate them by new line or comma.
-                                <br><br>
-                                <b>Manual Trailer/Video Override:</b> You can specify a YouTube URL <b>OR</b> a Jellyfin Item ID (e.g. for a Theme Video) for an item by adding it in
-                                brackets: <br> <code>e.g. ID DESCRIPTION [https://youtu.be/...]</code> or <code>ID [Method] DESCRIPTION</code>.
-                                <br>
-                                Methods:
-                                <ul>
-                                    <li><b>YouTube URL:</b> Play a remote trailer from YouTube.</li>
-                                    <li><b>Jellyfin Item ID (GUID):</b> Play the video of another library item (e.g. a Theme Video or Backdrop Video) using the native player.</li>
-                                </ul>
-                                <br><br>
-                                You can also add a description after the ID using any separator like space, pipe
-                                (|) or dash (-): <br>e.g. <code>ID DESCRIPTION</code> or <code>ID | DESCRIPTION</code>
-                                <br><br>
-                                <b>Note:</b> If using a <b>Collection Name</b> (instead of an ID) combined with a description, you <b>MUST</b> use 
-                                the pipe (|) separator.
-                                <br>
-                                <b>Note:</b> The separator <b>MUST NOT</b> be a hex character (0-9, a-f).</div>
-                            <div class="fieldDescription" id="seasonalMediaIdsDesc" style="display: none;">
-                                <b>Seasonal Mode Enabled:</b> Define lines with date ranges (Format: DD.MM-DD.MM |
-                                <i>name</i> | <i>IDs</i>).<br>
-                                Example:<br>
-                                <code>20.10-31.10 | Halloween | ID1, ID2 [https://youtu.be/...]</code><br>
-                                <code>01.12-26.12 | Christmas | ID3, ID4</code><br>
-                                <i>Only lines matching the current date will be used. If no line matches, it will try to
-                                    fetch the list.txt or use random items.</i>
-                            </div>
-                            <p>You can find the IDs of your items in the URL of the item page in the web interface.<br>
-                                Example:
-                                <code>https://your-jellyfin-url/web/#/details?id=<b style="color:red;">your-item-id</b>&serverId=your-server-id</code><br><br>
-                                You can also insert a name of a collection or playlist to fetch the IDs of all items in
-                                it (will take the first hit.<br><b>Note:</b> there is currently no feedback if the name
-                                resolution succeeded, you will have to look if the bar displays the correct items.).
-                            </p>
+                        <div id="seasonalContentContainer" style="display: none;">
+                            <div id="seasonalSectionsList"></div>
+                            <button is="emby-button" type="button" id="addSeasonBtn" class="raised emby-button"
+                                style="margin-top: 1em; display: inline-flex; align-items: center; gap: 0.4em;">
+                                <i class="material-icons" style="font-size: 24px;">add</i>
+                                <span>Add Season</span>
+                            </button>
                         </div>
+                        <input type="hidden" id="SeasonalSections" name="SeasonalSections" value="[]" />
                     </div>
 
                     <!-- ADVANCED TAB -->
@@ -184,11 +192,11 @@
                                 <input is="emby-checkbox" type="checkbox" id="UseSponsorBlock" name="UseSponsorBlock" />
                                 <span>Use SponsorBlock</span>
                             </label>
-                            <div class="fieldDescription">Skip intro/outro segments in YouTube trailers.</div>
+                            <div class="fieldDescription">Skip intro/outro segments in YouTube trailers (if data is available).</div>
                         </div>
                         <div class="selectContainer">
                             <label class="selectLabel" for="PreferredVideoQuality">Preferred YouTube Quality</label>
-                            <select is="emby-select" id="PreferredVideoQuality" name="PreferredVideoQuality" class="selectLayout emby-select-withcolor emby-select">
+                            <select is="emby-select" id="PreferredVideoQuality" name="PreferredVideoQuality" class="selectLayout emby-select-withcolor emby-select" style="width: 100%; -webkit-appearance: menulist; appearance: menulist;">
                                 <option value="Auto">Auto (Smart)</option>
                                 <option value="Maximum">Maximum (4K+)</option>
                                 <option value="1080p">1080p</option>
@@ -290,7 +298,7 @@
                         <h2 class="sectionTitle">Content Sorting</h2>
                         <div class="selectContainer">
                             <label class="selectLabel" for="SortBy">Sort By</label>
-                            <select is="emby-select" id="SortBy" name="SortBy" class="selectLayout emby-select-withcolor emby-select">
+                            <select is="emby-select" id="SortBy" name="SortBy" class="selectLayout emby-select-withcolor emby-select" style="width: 100%; -webkit-appearance: menulist; appearance: menulist;">
                                 <option value="Random">Random</option>
                                 <option value="Original">Original (Custom List Order)</option>
                                 <option value="PremiereDate">Premiere Date</option>
@@ -304,7 +312,7 @@
                         </div>
                         <div class="selectContainer">
                             <label class="selectLabel" for="SortOrder">Sort Order</label>
-                            <select is="emby-select" id="SortOrder" name="SortOrder" class="selectLayout emby-select-withcolor emby-select">
+                            <select is="emby-select" id="SortOrder" name="SortOrder" class="selectLayout emby-select-withcolor emby-select" style="width: 100%; -webkit-appearance: menulist; appearance: menulist;">
                                 <option value="Ascending">Ascending</option>
                                 <option value="Descending">Descending</option>
                             </select>
@@ -337,7 +345,7 @@
                         <div class="inputContainer">
                             <label class="inputLabel inputLabelUnfocused" for="PreloadCount">Preload Count</label>
                             <input is="emby-input" type="number" id="PreloadCount" name="PreloadCount" />
-                            <div class="fieldDescription">Number of images to preload.</div>
+                            <div class="fieldDescription">Number of slides to preload.</div>
                         </div>
                         <div class="inputContainer">
                             <label class="inputLabel inputLabelUnfocused" for="MaxPaginationDots">Max Pagination
@@ -411,7 +419,7 @@
                             'ShowTrailerButton', 'AlwaysShowArrows', 'EnableKeyboardControls',
                             'EnableCustomMediaIds', 'CustomMediaIds', 'EnableLoadingScreen',
                             'EnableSeasonalContent', 'EnableClientSideSettings', 'SortBy', 'SortOrder',
-                            'PreferLocalTrailers'
+                            'PreferLocalTrailers', 'ApplyLimitsToCustomIds', 'SeasonalSections'
                         ];
 
                         keys.forEach(function (key) {
@@ -425,24 +433,38 @@
                             }
                         });
 
-                        // Handle Seasonal UI logic
-                        var seasonalCheckbox = page.querySelector('#EnableSeasonalContent');
-                        var normalDesc = page.querySelector('#customMediaIdsDesc');
-                        var seasonalDesc = page.querySelector('#seasonalMediaIdsDesc');
+                        // Render Seasonal Sections
+                        try {
+                            var sections = JSON.parse(config.SeasonalSections || "[]");
+                            MediaBarEnhancedConfigurationPage.renderSeasonalSections(page, sections);
+                        } catch (e) {
+                            console.error("Error parsing SeasonalSections", e);
+                        }
 
-                        function updateDesc() {
-                            if (seasonalCheckbox && seasonalCheckbox.checked) {
-                                if (normalDesc) normalDesc.style.display = 'none';
-                                if (seasonalDesc) seasonalDesc.style.display = 'block';
-                            } else {
-                                if (normalDesc) normalDesc.style.display = 'block';
-                                if (seasonalDesc) seasonalDesc.style.display = 'none';
+                        // Handle Seasonal UI visibility
+                        var seasonalCheckbox = page.querySelector('#EnableSeasonalContent');
+                        var seasonalContainer = page.querySelector('#seasonalContentContainer');
+
+                        function updateSeasonalVisibility() {
+                            if (seasonalContainer) {
+                                seasonalContainer.style.display = seasonalCheckbox && seasonalCheckbox.checked ? 'block' : 'none';
                             }
                         }
 
                         if (seasonalCheckbox) {
-                            seasonalCheckbox.addEventListener('change', updateDesc);
-                            updateDesc();
+                            seasonalCheckbox.addEventListener('change', updateSeasonalVisibility);
+                            updateSeasonalVisibility();
+                        }
+                        
+                        // Add Season Button
+                        var addSeasonBtn = page.querySelector('#addSeasonBtn');
+                        if (addSeasonBtn) {
+                            // Remove existing listeners to avoid duplicates if re-attached
+                             var newBtn = addSeasonBtn.cloneNode(true);
+                             addSeasonBtn.parentNode.replaceChild(newBtn, addSeasonBtn);
+                             newBtn.addEventListener('click', function() {
+                                 MediaBarEnhancedConfigurationPage.addSeasonalSection(page);
+                             });
                         }
 
                         // Handle Prefer Local Trailers visibility
@@ -468,6 +490,11 @@
                 saveConfiguration: function (page) {
                     Dashboard.showLoadingMsg();
 
+                    var sections = MediaBarEnhancedConfigurationPage.getSeasonalSectionsFromUI(page);
+                    var sectionsJson = JSON.stringify(sections);
+                    var seasonalInput = page.querySelector('#SeasonalSections');
+                    if (seasonalInput) seasonalInput.value = sectionsJson;
+
                     var config = {};
                     var keys = [
                         'IsEnabled', 'ShuffleInterval', 'RetryInterval', 'MinSwipeDistance',
@@ -478,7 +505,7 @@
                         'ShowTrailerButton', 'AlwaysShowArrows', 'EnableKeyboardControls',
                         'EnableCustomMediaIds', 'CustomMediaIds', 'EnableLoadingScreen',
                         'EnableSeasonalContent', 'EnableClientSideSettings', 'SortBy', 'SortOrder',
-                        'PreferLocalTrailers'
+                        'PreferLocalTrailers', 'ApplyLimitsToCustomIds', 'SeasonalSections'
                     ];
 
                     keys.forEach(function (key) {
@@ -495,6 +522,105 @@
                     ApiClient.updatePluginConfiguration(MediaBarEnhancedConfigurationPage.pluginId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
                     });
+                },
+
+                renderSeasonalSections: function(page, sections) {
+                    var container = page.querySelector('#seasonalSectionsList');
+                    if (!container) return;
+                    container.innerHTML = '';
+                    sections.forEach(function(section, index) {
+                        MediaBarEnhancedConfigurationPage.createSectionElement(container, section, index + 1);
+                    });
+                },
+
+                addSeasonalSection: function(page) {
+                    var container = page.querySelector('#seasonalSectionsList');
+                    if (!container) return;
+                    var index = container.children.length + 1;
+                    MediaBarEnhancedConfigurationPage.createSectionElement(container, {
+                        Name: 'New Season',
+                        StartDay: 1, StartMonth: 1,
+                        EndDay: 1, EndMonth: 1,
+                        MediaIds: ''
+                    }, index);
+                },
+
+                createSectionElement: function(container, data, index) {
+                    var div = document.createElement('div');
+                    div.className = 'seasonal-section';
+                    div.style.cssText = 'background: rgba(0,0,0,0.2); padding: 1em; margin-bottom: 1em; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);';
+                    
+                    var days = [];
+                    for(var i=1; i<=31; i++) days.push(i);
+                    var months = [
+                        {v:1, n:'Jan'}, {v:2, n:'Feb'}, {v:3, n:'Mar'}, {v:4, n:'Apr'}, 
+                        {v:5, n:'May'}, {v:6, n:'Jun'}, {v:7, n:'Jul'}, {v:8, n:'Aug'}, 
+                        {v:9, n:'Sep'}, {v:10, n:'Oct'}, {v:11, n:'Nov'}, {v:12, n:'Dec'}
+                    ];
+
+                    function mkSelect(val, opts, cls) {
+                        var h = '<select class="emby-select emby-select-withcolor ' + cls + '" style="width: auto; display: inline-block; margin-right: 5px; -webkit-appearance: menulist; appearance: menulist;">';
+                        opts.forEach(function(o) {
+                            var v = o.v || o;
+                            var n = o.n || o;
+                            h += '<option value="'+v+'" ' + (v == val ? 'selected' : '') + '>' + n + '</option>';
+                        });
+                        h += '</select>';
+                        return h;
+                    }
+
+                    var labelText = 'Season list #' + (index || 1);
+
+                    div.innerHTML =
+                        '<div class="inputContainer" style="margin-bottom: 0.5em;">' +
+                        '    <label class="inputLabel" style="font-size: 1.2em; font-weight: bold; margin-bottom:0.5em; display:block;">' + labelText + '</label>' +
+                        '    <div style="display: flex; align-items: center;">' +
+                        '        <div style="flex-grow:1;">' +
+                        '            <input is="emby-input" type="text" class="emby-input section-name" value="' + (data.Name || '') + '" />' +
+                        '        </div>' +
+                        '        <button type="button" class="raised emby-button remove-section" style="background: #a94442; min-width: unset; margin-left: 1em;">Remove</button>' +
+                        '    </div>' +
+                        '    <div class="fieldDescription">Name of the season</div>' +
+                        '</div>' +
+                        '<div class="inputContainer" style="margin-bottom: 1em;">' +
+                        '    <label class="inputLabel" style="margin-bottom:0.5em; display:block;">Active Period</label>' +
+                        '    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5em;">' +
+                        '        <span>From:</span>' +
+                                 mkSelect(data.StartDay, days, 'start-day') +
+                                 mkSelect(data.StartMonth, months, 'start-month') +
+                        '        <span style="margin-left: 1em;">To:</span>' +
+                                 mkSelect(data.EndDay, days, 'end-day') +
+                                 mkSelect(data.EndMonth, months, 'end-month') +
+                        '    </div>' +
+                        '    <div class="fieldDescription">Date range (inclusive) when this content is active.</div>' +
+                        '</div>' +
+                        '<div class="inputContainer">' +
+                        '    <label class="inputLabel" style="margin-bottom:0.5em; display:block;">Media IDs</label>' +
+                        '    <textarea is="emby-textarea" class="emby-textarea section-ids" style="width: 100%; height: 80px; font-family: monospace;">' + (data.MediaIds || '') + '</textarea>' +
+                        '    <div class="fieldDescription">Comma-separated or Newline separated list of Movie/Series/Collection IDs to show during this season.<br>Same options available as for the default media IDs.</div>' +
+                        '</div>';
+
+                    div.querySelector('.remove-section').addEventListener('click', function() {
+                        div.remove();
+                    });
+
+                    container.appendChild(div);
+                },
+
+                getSeasonalSectionsFromUI: function(page) {
+                    var sections = [];
+                    var els = page.querySelectorAll('.seasonal-section');
+                    els.forEach(function(el) {
+                        sections.push({
+                            Name: el.querySelector('.section-name').value,
+                            StartDay: parseInt(el.querySelector('.start-day').value),
+                            StartMonth: parseInt(el.querySelector('.start-month').value),
+                            EndDay: parseInt(el.querySelector('.end-day').value),
+                            EndMonth: parseInt(el.querySelector('.end-month').value),
+                            MediaIds: el.querySelector('.section-ids').value
+                        });
+                    });
+                    return sections;
                 }
             };
 
