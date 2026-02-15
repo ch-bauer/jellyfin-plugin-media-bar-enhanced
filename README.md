@@ -101,6 +101,9 @@ This plugin builds upon the original Media Bar with new capabilities and improve
         <img width="513" height="575" alt="Client-Settings" src="https://github.com/user-attachments/assets/3e29a84f-f8ea-4b7b-b561-80493cb1535b" />
         </details>
     *   **Local Trailers Preference**: Option to prefer local trailers (from the media item) over online sources.
+    *   **Theme Video Support**: Option to prefer local theme videos (backdrops) over trailers.
+    *   **Randomization**: Options to randomize theme videos and local trailers if multiple versions exist.
+    *   **Include Watched Content**: Option to include watched items in the random slideshow.
     *   **Content Sorting Options**: Sort content by various criteria such as PremiereDate, ProductionYear, Random, or Original order.
     *   **Client-Side Settings**: Allow users to override settings locally on their device.
 
@@ -157,6 +160,8 @@ Configure the plugin via **Dashboard** > **Plugins** > **Media Bar Enhanced**.
 *   **Wait For Trailer To End**: Prevents slide transition until the video finishes.
 *   **Enable Mobile Video**: specific setting to allow video playback on mobile devices (disabled by default to save data/battery).
 *   **Show Trailer Button**: Adds a button to open the trailer in a popup modal if video backdrops are disabled (e.g. on mobile if trailers are disabled there)
+*   **Prefer Local Trailers**: If enabled, local trailers will be preferred over remote (YouTube) trailers.
+*   **Prefer Local Backdrops / Theme Videos**: If enabled, local backdrop videos (Theme Videos) will be preferred over trailers.
 
 ### Custom Content
 Define exactly what shows up in your bar.
@@ -194,6 +199,7 @@ Customize the order of slides in the Media Bar.
 Fine-tune performance by limiting the number of items fetched from the server.
 
 *   **Total Max Items**: Maximum total items to fetch (combined).
+*   **Include Watched Content**: If enabled, the random slideshow will also include items that you have already watched.
 *   **Max Movies**: Maximum movies to include (for random selection).
 *   **Max Tv Shows**: Maximum TV shows to include (for random selection).
 *   **Preload Count**: Number of slides to preload for smooth transitions.
@@ -208,6 +214,8 @@ Fine-tune performance by limiting the number of items fetched from the server.
 *   **Full Width Video**: Stretches video to cover the entire width (good for desktop, crop on mobile).
 *   **Enable Loading Screen**: Enable/disable the loading indicator while the bar initializes.
 *   **Always Show Arrows**: Keeps navigation arrows visible instead of hiding them on mouse leave.
+*   **Randomize Backdrop Video**: If enabled, a random video from the backdrops/theme videos will be selected instead of the first one.
+*   **Randomize Local Trailer**: If enabled, a random local trailer will be selected instead of the first one.
 *   **Enable Keyboard Controls**:
     *   `Left`/`Right`: Change slide
     *   `Space`: Pause/Play slideshow
