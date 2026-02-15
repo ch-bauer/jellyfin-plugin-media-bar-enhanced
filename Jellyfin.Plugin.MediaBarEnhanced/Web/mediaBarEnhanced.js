@@ -437,7 +437,7 @@ const waitForApiClientAndInitialize = () => {
 
 const fetchPluginConfig = async () => {
   try {
-    const response = await fetch('/MediaBarEnhanced/Config');
+    const response = await fetch('../MediaBarEnhanced/Config');
     if (response.ok) {
       const pluginConfig = await response.json();
       if (pluginConfig) {
