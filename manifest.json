@@ -12,9 +12,9 @@
         "version": "1.6.4.0",
         "changelog": "- fix slide transition when using local/backdrop videos",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "",
-        "checksum": "",
-        "timestamp": ""
+        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.4.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "checksum": "6bb0eea92f9b226a99e3f643a0fafc44",
+        "timestamp": "2026-02-16T00:25:28Z"
       },
       {
         "version": "1.6.3.0",
