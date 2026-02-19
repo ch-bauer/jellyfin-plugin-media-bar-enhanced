@@ -12,9 +12,9 @@
         "version": "1.6.6.0",
         "changelog": "- feat: add static backdrop also for video backdrops\n- fix: renaming issue of settings (avoiding conflict with other plugins)",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "",
-        "checksum": "",
-        "timestamp": ""
+        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.6.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "checksum": "d8f30797ce246212d1ebdd6ffd4aa3ff",
+        "timestamp": "2026-02-19T18:03:48Z"
       },
       {
         "version": "1.6.5.0",
