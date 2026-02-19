@@ -3721,8 +3721,8 @@ const slidesInit = async () => {
   
   if (CONFIG.enableClientSideSettings) {
       MediaBarEnhancedSettingsManager.init();
-      const isEnabled = MediaBarEnhancedSettingsManager.getSetting('enabled', true);
-      if (!isEnabled) {
+      const isClientSideEnabled = MediaBarEnhancedSettingsManager.getSetting('enabled', true);
+      if (!isClientSideEnabled) {
           console.log("MediaBarEnhanced: Disabled by client-side setting.");
           const homeSections = document.querySelector('.homeSectionsContainer');
           if (homeSections) {
