@@ -78,7 +78,7 @@
                             <div class="fieldDescription">If enabled, local backdrop videos (Theme Videos) will be
                                 preferred over remote and local trailers.</div>
                         </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
+                        <div class="checkboxContainer checkboxContainer-withDescription" id="WaitForTrailerToEndContainer">
                             <label>
                                 <input is="emby-checkbox" type="checkbox" id="WaitForTrailerToEnd"
                                     name="WaitForTrailerToEnd" />
@@ -86,7 +86,7 @@
                             </label>
                             <div class="fieldDescription">Delay slide transition until trailer finishes.</div>
                         </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
+                        <div class="checkboxContainer checkboxContainer-withDescription" id="EnableMobileVideoContainer">
                             <label>
                                 <input is="emby-checkbox" type="checkbox" id="EnableMobileVideo"
                                     name="EnableMobileVideo" />
@@ -100,8 +100,8 @@
                                     name="ShowTrailerButton" />
                                 <span>Show Trailer Button</span>
                             </label>
-                            <div class="fieldDescription">Display a button to open trailer in modal. Only visible if
-                                trailer is not set as backdrop or if no trailer is available.</div>
+                            <div class="fieldDescription">Display a button to open trailer in modal. Button only
+                                visible if trailer is not set as backdrop.</div>
                         </div>
                     </div>
 
@@ -184,6 +184,14 @@
                                 Custom Media IDs above or random selection are used as fallback.</div>
                         </div>
                         <div id="seasonalContentContainer" style="display: none;">
+                            <div class="checkboxContainer checkboxContainer-withDescription">
+                                <label>
+                                    <input is="emby-checkbox" type="checkbox" id="ExcludeSeasonalContent"
+                                        name="ExcludeSeasonalContent" />
+                                    <span>Exclude Seasonal Content from Random Lists</span>
+                                </label>
+                                <div class="fieldDescription">When enabled, any items defined in your Seasonal Sections below will be explicitly excluded from being shown when the plugin pulls random items from your library.</div>
+                            </div>
 
                             <div
                                 style="background-color: rgba(255, 255, 255, 0.05); border-left: 4px solid #00a4dc; border-radius: 4px; padding: 1em 1.5em; margin: 1.5em 0; display: flex; align-items: center; gap: 1em;">
@@ -291,16 +299,23 @@
                                 <span>Enable Loading Screen</span>
                             </label>
                             <div class="fieldDescription">Show a loading screen while the slideshow initializes. (You
-                                may have to reload the page twice)</div>
+                                may have to reload the page twice (after changing this setting) to take effect)</div>
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label>
                                 <input is="emby-checkbox" type="checkbox" id="AlwaysShowArrows"
                                     name="AlwaysShowArrows" />
-                                <span>Always Show Arrows</span>
+                                <span>Always Show Arrow Navigation Buttons</span>
                             </label>
-                            <div class="fieldDescription">If enabled, navigation arrows will always be visible instead
-                                of only on hover.</div>
+                            <div class="fieldDescription">Force the UI arrow navigation buttons to always be visible instead of only when hovered.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
+                                <input is="emby-checkbox" type="checkbox" id="HideArrowsOnMobile"
+                                    name="HideArrowsOnMobile" />
+                                <span>Hide Arrows on Mobile</span>
+                            </label>
+                            <div class="fieldDescription">Completely disable the navigation arrows on mobile devices (since swiping is available).</div>
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label>
@@ -312,6 +327,7 @@
                                 Space (pause), M (mute/unmute)) for
                                 the slideshow.</div>
                         </div>
+                        <hr style="max-width: 800px; margin: 1em 0;">
 
                         <h2 class="sectionTitle">Time Settings</h2>
                         <p>Leave a setting blank to use the default value.</p>
@@ -355,8 +371,9 @@
                             <div class="fieldDescription">Minimum distance in pixels for a swipe to be registered (for
                                 mobile).</div>
                         </div>
+                        <hr style="max-width: 800px; margin: 1em 0;">
 
-                        <h2 class="sectionTitle">Content Sorting</h2>
+                        <h2 class="sectionTitle">Content Sorting and Filtering</h2>
                         <div class="selectContainer">
                             <label class="selectLabel" for="SortBy">Sort By</label>
                             <select is="emby-select" id="SortBy" name="SortBy"
@@ -387,6 +404,26 @@
                             <b>Note:</b> Sorting settings apply to both Server content and Custom IDs. 'Original'
                             preserves Custom List order.
                         </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="MaxParentalRating">Max Parental Rating (Age Limit)</label>
+                            <input is="emby-input" type="number" id="MaxParentalRating" name="MaxParentalRating" />
+                            <div class="fieldDescription">Items exceeding this age rating will not be shown. Leave blank or set to 0 for no limit. Examples: 12, 16, 18.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="MaxDaysRecent">Max Days Recent</label>
+                            <input is="emby-input" type="number" id="MaxDaysRecent" name="MaxDaysRecent" />
+                            <div class="fieldDescription">Only show items added in the last X days. Leave blank or set to 0 for no limit. Example: 30.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
+                                <input is="emby-checkbox" type="checkbox" id="IncludeWatchedContent"
+                                    name="IncludeWatchedContent" />
+                                <span>Include Watched Content</span>
+                            </label>
+                            <div class="fieldDescription">If enabled, watched content will be included in the random
+                                selection results.</div>
+                        </div>
+                        <hr style="max-width: 800px; margin: 1em 0;">
 
                         <h2 class="sectionTitle">Content Limits</h2>
                         <p>Leave a setting blank to use the default value.</p>
@@ -417,7 +454,7 @@
                             <label>
                                 <input is="emby-checkbox" type="checkbox" id="ShowPaginationDots"
                                     name="ShowPaginationDots" />
-                                <span>Show Pagination Dots</span>
+                                <span>Show Pagination Dots/Counter</span>
                             </label>
                             <div class="fieldDescription">Show or hide the pagination dots/counter navigation at the
                                 bottom of the slideshow.</div>
@@ -435,15 +472,6 @@
                                 Length</label>
                             <input is="emby-input" type="number" id="MaxPlotLength" name="MaxPlotLength" />
                             <div class="fieldDescription">Maximum characters for the plot summary.</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label>
-                                <input is="emby-checkbox" type="checkbox" id="IncludeWatchedContent"
-                                    name="IncludeWatchedContent" />
-                                <span>Include Watched Content</span>
-                            </label>
-                            <div class="fieldDescription">If enabled, watched content will be included in the random
-                                selection results.</div>
                         </div>
                     </div>
 
@@ -505,7 +533,8 @@
                             'EnableSeasonalContent', 'EnableClientSideSettings', 'SortBy', 'SortOrder',
                             'PreferLocalTrailers', 'ApplyLimitsToCustomIds', 'SeasonalSections',
                             'PreferLocalBackdrops', 'RandomizeThemeVideos', 'RandomizeLocalTrailers',
-                            'IncludeWatchedContent', 'ShowPaginationDots'
+                            'IncludeWatchedContent', 'ShowPaginationDots', 'MaxParentalRating',
+                            'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile'
                         ];
 
                         // Manual mapping for MediaBarIsEnabled -> IsEnabled, to avoid conflicts with other plugins
@@ -563,14 +592,20 @@
                         var enableVideoBackdropCheckbox = page.querySelector('#EnableVideoBackdrop');
                         var preferLocalContainer = page.querySelector('#PreferLocalTrailersContainer');
                         var preferLocalBackdropsContainer = page.querySelector('#PreferLocalBackdropsContainer');
+                        var waitForTrailerContainer = page.querySelector('#WaitForTrailerToEndContainer');
+                        var enableMobileVideoContainer = page.querySelector('#EnableMobileVideoContainer');
 
                         function updatePreferLocalVisibility() {
                             if (enableVideoBackdropCheckbox && enableVideoBackdropCheckbox.checked) {
                                 if (preferLocalContainer) preferLocalContainer.style.display = 'block';
                                 if (preferLocalBackdropsContainer) preferLocalBackdropsContainer.style.display = 'block';
+                                if (waitForTrailerContainer) waitForTrailerContainer.style.display = 'block';
+                                if (enableMobileVideoContainer) enableMobileVideoContainer.style.display = 'block';
                             } else {
                                 if (preferLocalContainer) preferLocalContainer.style.display = 'none';
                                 if (preferLocalBackdropsContainer) preferLocalBackdropsContainer.style.display = 'none';
+                                if (waitForTrailerContainer) waitForTrailerContainer.style.display = 'none';
+                                if (enableMobileVideoContainer) enableMobileVideoContainer.style.display = 'none';
                             }
                         }
 
@@ -609,7 +644,8 @@
                         'EnableSeasonalContent', 'EnableClientSideSettings', 'SortBy', 'SortOrder',
                         'PreferLocalTrailers', 'ApplyLimitsToCustomIds', 'SeasonalSections',
                         'PreferLocalBackdrops', 'RandomizeThemeVideos', 'RandomizeLocalTrailers',
-                        'IncludeWatchedContent', 'ShowPaginationDots'
+                        'IncludeWatchedContent', 'ShowPaginationDots', 'MaxParentalRating',
+                        'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile'
                     ];
 
                     keys.forEach(function (key) {

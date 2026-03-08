@@ -15,6 +15,8 @@ namespace Jellyfin.Plugin.MediaBarEnhanced.Configuration
         public int MaxMovies { get; set; } = 15;
         public int MaxTvShows { get; set; } = 15;
         public int MaxItems { get; set; } = 500;
+        public int MaxParentalRating { get; set; } = 0;
+        public int MaxDaysRecent { get; set; } = 0;
         public int PreloadCount { get; set; } = 3;
         public int FadeTransitionDuration { get; set; } = 500;
         public int MaxPaginationDots { get; set; } = 15;
@@ -34,10 +36,12 @@ namespace Jellyfin.Plugin.MediaBarEnhanced.Configuration
         public bool EnableLoadingScreen { get; set; } = true;
         public bool EnableKeyboardControls { get; set; } = true;
         public bool AlwaysShowArrows { get; set; } = false;
+        public bool HideArrowsOnMobile { get; set; } = true;
         public string CustomMediaIds { get; set; } = "";
         public bool EnableCustomMediaIds { get; set; } = true;
         public string PreferredVideoQuality { get; set; } = "Auto";
         public bool EnableSeasonalContent { get; set; } = false;
+        public bool ExcludeSeasonalContent { get; set; } = true;
         public string SeasonalSections { get; set; } = "[]";
         public bool IsEnabled { get; set; } = true;
         public bool EnableClientSideSettings { get; set; } = false;
