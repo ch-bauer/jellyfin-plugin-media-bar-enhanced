@@ -38,10 +38,15 @@ const CONFIG = {
   preloadCount: 3,
   fadeTransitionDuration: 500,
   maxPaginationDots: 15,
+  showPaginationDots: true,
   slideAnimationEnabled: true,
   enableVideoBackdrop: true,
   useSponsorBlock: true,
   preferLocalTrailers: false,
+  randomizeLocalTrailers: false,
+  preferLocalBackdrops: false,
+  randomizeThemeVideos: false,
+  includeWatchedContent: false,
   waitForTrailerToEnd: true,
   startMuted: true,
   fullWidthVideo: true,
@@ -57,6 +62,9 @@ const CONFIG = {
   enableClientSideSettings: false,
   sortBy: "Random",
   sortOrder: "Ascending",
+  applyLimitsToCustomIds: false,
+  seasonalSections: "[]",
+  isEnabled: true,
 };
 
 // State management
@@ -117,7 +125,7 @@ const processNextRequest = () => {
     })
     .then(callback)
     .catch((error) => {
-      console.error("Error in throttled request:", error);
+      console.error("🎬 Media Bar:", "Error in throttled request:", error);
     })
     .finally(() => {
       setTimeout(processNextRequest, 100);
@@ -151,9 +159,17 @@ const isUserLoggedIn = () => {
       window.ApiClient._serverInfo.AccessToken
     );
   } catch (error) {
-    console.error("Error checking login status:", error);
+    console.error("🎬 Media Bar:", "Error checking login status:", error);
     return false;
   }
+};
+
+/**
+ * Detects if the current device is a low-power device (Smart TVs, etc.)
+ * @returns {boolean} True if running on a low-power device
+ */
+const isLowPowerDevice = () => {
+  return /webOS|LG Browser|SMART-TV|SmartTV|Tizen|Viera|NetCast|Roku|VIDAA/i.test(navigator.userAgent);
 };
 
 /**
@@ -162,7 +178,7 @@ const isUserLoggedIn = () => {
  */
 const initJellyfinData = (callback) => {
   if (!window.ApiClient) {
-    console.warn("⏳ window.ApiClient is not available yet. Retrying...");
+    console.warn("🎬 Media Bar:", "⏳ window.ApiClient is not available yet. Retrying...");
     setTimeout(() => initJellyfinData(callback), CONFIG.retryInterval);
     return;
   }
@@ -183,7 +199,7 @@ const initJellyfinData = (callback) => {
       callback();
     }
   } catch (error) {
-    console.error("Error initializing Jellyfin data:", error);
+    console.error("🎬 Media Bar:", "Error initializing Jellyfin data:", error);
     setTimeout(() => initJellyfinData(callback), CONFIG.retryInterval);
   }
 };
@@ -195,9 +211,9 @@ const initLocalization = async () => {
   try {
     const locale = await LocalizationUtils.getCurrentLocale();
     await LocalizationUtils.loadTranslations(locale);
-    console.log("✅ Localization initialized");
+    console.log("🎬 Media Bar:", "✅ Localization initialized");
   } catch (error) {
-    console.error("Error initializing localization:", error);
+    console.error("🎬 Media Bar:", "Error initializing localization:", error);
   }
 };
 
@@ -317,7 +333,7 @@ const initLoadingScreen = () => {
  * Resets the slideshow state completely
  */
 const resetSlideshowState = () => {
-  console.log("🔄 Resetting slideshow state...");
+  console.log("🎬 Media Bar:", "🔄 Resetting slideshow state...");
 
   if (STATE.slideshow.slideInterval) {
     STATE.slideshow.slideInterval.stop();
@@ -371,14 +387,14 @@ const startLoginStatusWatcher = () => {
 
     if (isLoggedIn !== wasLoggedIn) {
       if (isLoggedIn) {
-        console.log("👤 User logged in. Initializing slideshow...");
+        console.log("🎬 Media Bar:", "👤 User logged in. Initializing slideshow...");
         if (!STATE.slideshow.hasInitialized) {
           waitForApiClientAndInitialize();
         } else {
-          console.log("🔄 Slideshow already initialized, skipping");
+          console.log("🎬 Media Bar:", "🔄 Slideshow already initialized, skipping");
         }
       } else {
-        console.log("👋 User logged out. Stopping slideshow...");
+        console.log("🎬 Media Bar:", "👋 User logged out. Stopping slideshow...");
         resetSlideshowState();
       }
       wasLoggedIn = isLoggedIn;
@@ -396,7 +412,7 @@ const waitForApiClientAndInitialize = () => {
 
   window.slideshowCheckInterval = setInterval(() => {
     if (!window.ApiClient) {
-      console.log("⏳ ApiClient not available yet. Waiting...");
+      console.log("🎬 Media Bar:", "⏳ ApiClient not available yet. Waiting...");
       return;
     }
 
@@ -406,23 +422,23 @@ const waitForApiClientAndInitialize = () => {
       window.ApiClient._serverInfo &&
       window.ApiClient._serverInfo.AccessToken
     ) {
-      console.log(
+      console.log("🎬 Media Bar:", 
         "🔓 User is fully logged in. Starting slideshow initialization..."
       );
       clearInterval(window.slideshowCheckInterval);
 
       if (!STATE.slideshow.hasInitialized) {
         initJellyfinData(async () => {
-          console.log("✅ Jellyfin API client initialized successfully");
+          console.log("🎬 Media Bar:", "✅ Jellyfin API client initialized successfully");
           await initLocalization();
           await fetchPluginConfig();
           slidesInit();
         });
       } else {
-        console.log("🔄 Slideshow already initialized, skipping");
+        console.log("🎬 Media Bar:", "🔄 Slideshow already initialized, skipping");
       }
     } else {
-      console.log(
+      console.log("🎬 Media Bar:", 
         "🔒 Authentication incomplete. Waiting for complete login..."
       );
     }
@@ -431,7 +447,7 @@ const waitForApiClientAndInitialize = () => {
 
 const fetchPluginConfig = async () => {
   try {
-    const response = await fetch('/MediaBarEnhanced/Config');
+    const response = await fetch('../MediaBarEnhanced/Config');
     if (response.ok) {
       const pluginConfig = await response.json();
       if (pluginConfig) {
@@ -453,11 +469,11 @@ const fetchPluginConfig = async () => {
         // Sync to LocalStorage for next load
         localStorage.setItem('mediaBarEnhanced-enableLoadingScreen', CONFIG.enableLoadingScreen);
 
-        console.log("✅ MediaBarEnhanced config loaded", CONFIG);
+        console.log("🎬 Media Bar:", "✅ MediaBarEnhanced config loaded", CONFIG);
       }
     }
   } catch (e) {
-    console.error("Failed to load MediaBarEnhanced config", e);
+    console.error("🎬 Media Bar:", "Failed to load MediaBarEnhanced config", e);
   }
 };
 
@@ -611,7 +627,8 @@ const SlideUtils = {
     if (!container) {
       container = this.createElement("div", { 
         id: "slides-container",
-        className: "noautofocus"
+        className: "noautofocus",
+        tabIndex: "-1"
       });
       document.body.appendChild(container);
     }
@@ -722,27 +739,33 @@ const SlideUtils = {
         }
       }
     } catch (e) {
-      console.warn("Invalid URL for modal:", url);
+      console.warn("🎬 Media Bar:", "Invalid URL for modal:", url);
     }
 
     if (isYoutube && videoId) {
-      const playerDiv = this.createElement('div', { id: 'modal-yt-player' });
-      contentContainer.appendChild(playerDiv);
+      const ytIframe = this.createElement('iframe', {
+        id: 'modal-yt-player',
+        src: `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`,
+        allow: 'autoplay; encrypted-media',
+        style: 'width: 100%; height: 100%; border: none;',
+        referrerpolicy: 'strict-origin-when-cross-origin',
+        allowfullscreen: 'true'
+      });
+
+      contentContainer.appendChild(ytIframe);
       overlay.append(closeButton, contentContainer);
       document.body.appendChild(overlay);
 
       this.loadYouTubeIframeAPI().then(() => {
-        new YT.Player('modal-yt-player', {
-          height: '100%',
-          width: '100%',
-          videoId: videoId,
+        new YT.Player(ytIframe, {
           playerVars: {
             autoplay: 1,
             controls: 1,
             iv_load_policy: 3,
             rel: 0,
             playsinline: 1,
-            origin: window.location.origin
+            origin: window.location.origin,
+            enablejsapi: 1
           }
         });
       });
@@ -799,7 +822,7 @@ const LocalizationUtils = {
         locale = localStorage.getItem("language").toLowerCase();
       }
     } catch (e) {
-      console.warn("Could not access localStorage for language:", e);
+      console.warn("🎬 Media Bar:", "Could not access localStorage for language:", e);
     }
 
     if (!locale) {
@@ -825,7 +848,7 @@ const LocalizationUtils = {
           }
         }
       } catch (error) {
-        console.warn("Could not fetch user audio language preference:", error);
+        console.warn("🎬 Media Bar:", "Could not fetch user audio language preference:", error);
       }
     }
 
@@ -845,7 +868,7 @@ const LocalizationUtils = {
           }
         }
       } catch (error) {
-        console.warn("Could not fetch server metadata language preference:", error);
+        console.warn("🎬 Media Bar:", "Could not fetch server metadata language preference:", error);
       }
     }
 
@@ -890,7 +913,7 @@ const LocalizationUtils = {
           }
         }
       } catch (e) {
-        console.warn("Error checking performance entries:", e);
+        console.warn("🎬 Media Bar:", "Error checking performance entries:", e);
       }
     }
 
@@ -955,7 +978,7 @@ const LocalizationUtils = {
           this.translations[locale] = JSON.parse(jsonString);
           return;
         } catch (e) {
-          console.error('Failed to parse JSON from standard extraction.');
+          console.error("🎬 Media Bar:", 'Failed to parse JSON from standard extraction.');
           // Try alternative extraction below
         }
 
@@ -967,7 +990,7 @@ const LocalizationUtils = {
             this.translations[locale] = JSON.parse(jsonString);
             return;
           } catch (e) {
-            console.error('Failed to parse JSON from direct extraction.');
+            console.error("🎬 Media Bar:", 'Failed to parse JSON from direct extraction.');
             // Try direct extraction
           }
         }
@@ -981,11 +1004,11 @@ const LocalizationUtils = {
             this.translations[locale] = JSON.parse(jsonString);
             return;
           } catch (e) {
-            console.error("Failed to parse JSON from chunk:", e);
+            console.error("🎬 Media Bar:", "Failed to parse JSON from chunk:", e);
           }
         }
       } catch (error) {
-        console.error("Error loading translations:", error);
+        console.error("🎬 Media Bar:", "Error loading translations:", error);
       } finally {
         delete this.isLoading[locale];
       }
@@ -1049,35 +1072,8 @@ const ApiUtils = {
 
       return itemData;
     } catch (error) {
-      console.error(`Error fetching details for item ${itemId}:`, error);
+      console.error("🎬 Media Bar:", `Error fetching details for item ${itemId}:`, error);
       return null;
-    }
-  },
-
-  /**
-   * Fetch item IDs from the list file
-   * @returns {Promise<Array>} Array of item IDs
-   */
-  // MARK: LIST FILE
-  async fetchItemIdsFromList() {
-    try {
-      const listFileName = `${STATE.jellyfinData.serverAddress}/web/avatars/list.txt?userId=${STATE.jellyfinData.userId}`;
-      const response = await fetch(listFileName);
-
-      if (!response.ok) {
-        console.warn("list.txt not found or inaccessible. Using random items.");
-        return [];
-      }
-
-      const text = await response.text();
-      return text
-        .split("\n")
-        .map((id) => id.trim())
-        .filter((id) => id)
-        .slice(1);
-    } catch (error) {
-      console.error("Error fetching list.txt:", error);
-      return [];
     }
   },
 
@@ -1091,7 +1087,7 @@ const ApiUtils = {
         !STATE.jellyfinData.accessToken ||
         STATE.jellyfinData.accessToken === "Not Found"
       ) {
-        console.warn("Access token not available. Delaying API request...");
+        console.warn("🎬 Media Bar:", "Access token not available. Delaying API request...");
         return [];
       }
 
@@ -1099,11 +1095,11 @@ const ApiUtils = {
         !STATE.jellyfinData.serverAddress ||
         STATE.jellyfinData.serverAddress === "Not Found"
       ) {
-        console.warn("Server address not available. Delaying API request...");
+        console.warn("🎬 Media Bar:", "Server address not available. Delaying API request...");
         return [];
       }
 
-      console.log("Fetching random items from server...");
+      console.log("🎬 Media Bar:", "Fetching random items from server...");
 
       let sortParams = `sortBy=${CONFIG.sortBy}`;
 
@@ -1113,15 +1109,18 @@ const ApiUtils = {
         sortParams += `&sortOrder=${CONFIG.sortOrder}`;
       }
 
+      // Filter by isPlayed=False unless IncludeWatchedContent is enabled
+      const playedFilter = CONFIG.includeWatchedContent ? '' : '&isPlayed=False';
+
       const response = await fetch(
-        `${STATE.jellyfinData.serverAddress}/Items?IncludeItemTypes=Movie,Series&Recursive=true&hasOverview=true&imageTypes=Logo,Backdrop&${sortParams}&isPlayed=False&enableUserData=true&Limit=${CONFIG.maxItems}&fields=Id`,
+        `${STATE.jellyfinData.serverAddress}/Items?IncludeItemTypes=Movie,Series&Recursive=true&hasOverview=true&imageTypes=Logo,Backdrop&${sortParams}${playedFilter}&enableUserData=true&Limit=${CONFIG.maxItems}&fields=Id`,
         {
           headers: this.getAuthHeaders(),
         }
       );
 
       if (!response.ok) {
-        console.error(
+        console.error("🎬 Media Bar:", 
           `Failed to fetch items: ${response.status} ${response.statusText}`
         );
         return [];
@@ -1130,13 +1129,13 @@ const ApiUtils = {
       const data = await response.json();
       const items = data.Items || [];
 
-      console.log(
+      console.log("🎬 Media Bar:", 
         `Successfully fetched ${items.length} random items from server`
       );
 
       return items.map((item) => item.Id);
     } catch (error) {
-      console.error("Error fetching item IDs:", error);
+      console.error("🎬 Media Bar:", "Error fetching item IDs:", error);
       return [];
     }
   },
@@ -1160,7 +1159,7 @@ const ApiUtils = {
     try {
       const sessionId = await this.getSessionId();
       if (!sessionId) {
-        console.error("Session ID not found.");
+        console.error("🎬 Media Bar:", "Session ID not found.");
         return false;
       }
 
@@ -1176,10 +1175,10 @@ const ApiUtils = {
         );
       }
 
-      console.log("Play command sent successfully to session:", sessionId);
+      console.log("🎬 Media Bar:", "Play command sent successfully to session:", sessionId);
       return true;
     } catch (error) {
-      console.error("Error sending play command:", error);
+      console.error("🎬 Media Bar:", "Error sending play command:", error);
       return false;
     }
   },
@@ -1205,7 +1204,7 @@ const ApiUtils = {
       const sessions = await response.json();
 
       if (!sessions || sessions.length === 0) {
-        console.warn(
+        console.warn("🎬 Media Bar:", 
           "No sessions found for deviceId:",
           STATE.jellyfinData.deviceId
         );
@@ -1214,7 +1213,7 @@ const ApiUtils = {
 
       return sessions[0].Id;
     } catch (error) {
-      console.error("Error fetching session data:", error);
+      console.error("🎬 Media Bar:", "Error fetching session data:", error);
       return null;
     }
   },
@@ -1242,7 +1241,7 @@ const ApiUtils = {
       }
       button.classList.toggle("favorited", !isFavorite);
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+      console.error("🎬 Media Bar:", "Error toggling favorite:", error);
     }
   },
 
@@ -1253,9 +1252,20 @@ const ApiUtils = {
    */
   async fetchSponsorBlockData(videoId) {
     if (!CONFIG.useSponsorBlock) return { intro: null, outro: null };
+
+    // Return cached result if available
+    if (!this._sponsorBlockCache) this._sponsorBlockCache = {};
+    if (this._sponsorBlockCache[videoId]) {
+      return this._sponsorBlockCache[videoId];
+    }
+
     try {
       const response = await fetch(`https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}&categories=["intro","outro"]`);
-      if (!response.ok) return { intro: null, outro: null };
+      if (!response.ok) {
+        const result = { intro: null, outro: null };
+        this._sponsorBlockCache[videoId] = result;
+        return result;
+      }
 
       const segments = await response.json();
       let intro = null;
@@ -1269,9 +1279,11 @@ const ApiUtils = {
         }
       });
 
-      return { intro, outro };
+      const result = { intro, outro };
+      this._sponsorBlockCache[videoId] = result;
+      return result;
     } catch (error) {
-      console.warn('Error fetching SponsorBlock data:', error);
+      console.warn("🎬 Media Bar:", 'Error fetching SponsorBlock data:', error);
       return { intro: null, outro: null };
     }
   },
@@ -1291,7 +1303,7 @@ const ApiUtils = {
       );
 
       if (!response.ok) {
-        console.warn(`Failed to search for '${name}'`);
+        console.warn("🎬 Media Bar:", `Failed to search for '${name}'`);
         return null;
       }
 
@@ -1301,7 +1313,7 @@ const ApiUtils = {
       }
       return null;
     } catch (error) {
-      console.error(`Error searching for '${name}':`, error);
+      console.error("🎬 Media Bar:", `Error searching for '${name}':`, error);
       return null;
     }
   },
@@ -1314,23 +1326,23 @@ const ApiUtils = {
   async fetchCollectionItems(collectionId) {
     try {
       const response = await fetch(
-        `${STATE.jellyfinData.serverAddress}/Items?ParentId=${collectionId}&Recursive=true&IncludeItemTypes=Movie,Series&fields=Id&userId=${STATE.jellyfinData.userId}`,
+        `${STATE.jellyfinData.serverAddress}/Items?ParentId=${collectionId}&Recursive=true&IncludeItemTypes=Movie,Series&fields=Id,Type&userId=${STATE.jellyfinData.userId}`,
         {
           headers: this.getAuthHeaders(),
         }
       );
 
       if (!response.ok) {
-        console.warn(`Failed to fetch collection items for ${collectionId}`);
+        console.warn("🎬 Media Bar:", `Failed to fetch collection items for ${collectionId}`);
         return [];
       }
 
       const data = await response.json();
       const items = data.Items || [];
-      console.log(`Resolved collection ${collectionId} to ${items.length} items`);
-      return items.map(i => i.Id);
+      console.log("🎬 Media Bar:", `Resolved collection ${collectionId} to ${items.length} items`);
+      return items.map(i => ({ Id: i.Id, Type: i.Type }));
     } catch (error) {
-      console.error(`Error fetching collection items for ${collectionId}:`, error);
+      console.error("🎬 Media Bar:", `Error fetching collection items for ${collectionId}:`, error);
       return [];
     }
   },
@@ -1338,7 +1350,7 @@ const ApiUtils = {
   /**
    * Fetches the first local trailer for an item
    * @param {string} itemId - Item ID
-   * @returns {Promise<string|null>} Stream URL or null
+   * @returns {Promise<Object|null>} Trailer data object {id, url} or null
    */
   async fetchLocalTrailer(itemId) {
     try {
@@ -1353,17 +1365,68 @@ const ApiUtils = {
         return null;
       }
 
-      const trailers = await response.json();
-      if (trailers && trailers.length > 0) {
-        const trailer = trailers[0];
-        const mediaSourceId = trailer.MediaSources && trailer.MediaSources[0] ? trailer.MediaSources[0].Id : trailer.Id;
-        
-        // Construct stream URL
-        return `${STATE.jellyfinData.serverAddress}/Videos/${trailer.Id}/stream.mp4?Static=true&mediaSourceId=${mediaSourceId}&api_key=${STATE.jellyfinData.accessToken}`;
+        const trailers = await response.json();
+        if (trailers && trailers.length > 0) {
+            
+            let trailer;
+            if (CONFIG.randomizeLocalTrailers && trailers.length > 1) {
+                const randomIndex = Math.floor(Math.random() * trailers.length);
+                trailer = trailers[randomIndex];
+                 console.log("🎬 Media Bar:", `Using random local trailer (${randomIndex + 1}/${trailers.length}) for ${itemId}: ${trailer.Name}`);
+            } else {
+                trailer = trailers[0];
+            }
+
+            const mediaSourceId = trailer.MediaSources && trailer.MediaSources[0] ? trailer.MediaSources[0].Id : trailer.Id;
+
+            return {
+                id: trailer.Id,
+                url: `${STATE.jellyfinData.serverAddress}/Videos/${trailer.Id}/stream.mp4?mediaSourceId=${mediaSourceId}&api_key=${STATE.jellyfinData.accessToken}&static=true`
+            };
+        }
+        return null;
+    } catch (error) {
+      console.error("🎬 Media Bar:", `Error fetching local trailer for ${itemId}:`, error);
+      return null;
+    }
+  },
+
+  /**
+   * Fetches theme videos for an item
+   * @param {string} itemId - Item ID
+   * @returns {Promise<Object|null>} Theme video data object {id, url} or null
+   */
+  async fetchThemeVideos(itemId) {
+    try {
+      const response = await fetch(
+          `${STATE.jellyfinData.serverAddress}/Items/${itemId}/ThemeVideos?userId=${STATE.jellyfinData.userId}`, 
+          { headers: this.getAuthHeaders() }
+      );
+      
+      if (response.ok) {
+           const data = await response.json();
+           const items = Array.isArray(data) ? data : (data.Items || []);
+           
+           if (items.length > 0) {
+               let video;
+               if (CONFIG.randomizeThemeVideos && items.length > 1) {
+                   const randomIndex = Math.floor(Math.random() * items.length);
+                   video = items[randomIndex];
+                   console.log("🎬 Media Bar:", `Found Theme Video (Random ${randomIndex + 1}/${items.length}) via ThemeVideos endpoint: ${video.Name} (${video.Id})`);
+               } else {
+                   video = items[0];
+                   console.log("🎬 Media Bar:", `Found Theme Video (First) via ThemeVideos endpoint: ${video.Name} (${video.Id})`);
+               }
+
+               return {
+                   id: video.Id,
+                   url: `${STATE.jellyfinData.serverAddress}/Videos/${video.Id}/stream.mp4?api_key=${STATE.jellyfinData.accessToken}&static=true`
+               };
+           }
       }
       return null;
     } catch (error) {
-      console.error(`Error fetching local trailer for ${itemId}:`, error);
+      console.error("🎬 Media Bar:", `Error fetching theme videos for ${itemId}:`, error);
       return null;
     }
   }
@@ -1547,7 +1610,7 @@ const SlideCreator = {
    */
   createSlideElement(item, title) {
     if (!item || !item.Id) {
-      console.error("Invalid item data:", item);
+      console.error("🎬 Media Bar:", "Invalid item data:", item);
       return null;
     }
 
@@ -1562,6 +1625,7 @@ const SlideCreator = {
       "data-item-id": itemId,
     });
 
+    let videoBackdrop;
     let backdrop;
     let isVideo = false;
     let trailerUrl = null;
@@ -1571,20 +1635,46 @@ const SlideCreator = {
 
     // 1a. Custom URL override
     if (STATE.slideshow.customTrailerUrls && STATE.slideshow.customTrailerUrls[itemId]) {
-      trailerUrl = STATE.slideshow.customTrailerUrls[itemId];
-      console.log(`Using custom trailer URL for ${itemId}: ${trailerUrl}`);
+      const customValue = STATE.slideshow.customTrailerUrls[itemId];
+      
+      // Check if the custom value is a Jellyfin Item ID (GUID)
+      const guidMatch = customValue.match(/^([0-9a-f]{32})$/i);
+      
+      if (guidMatch) {
+          const videoId = guidMatch[1];
+          console.log("🎬 Media Bar:", `Using custom local video ID for ${itemId}: ${videoId}`);
+          
+          trailerUrl = {
+              id: videoId,
+              url: `${STATE.jellyfinData.serverAddress}/Videos/${videoId}/stream.mp4?api_key=${STATE.jellyfinData.accessToken}&static=true`
+          };
+      } else {
+          // Assume it's a standard URL (YouTube, etc.)
+          trailerUrl = customValue;
+          console.log("🎬 Media Bar:", `Using custom trailer URL for ${itemId}: ${trailerUrl}`);
+      }
+    }
+    // 1b. Check Theme Video if preferred (Local Backdrop)
+    else if (CONFIG.preferLocalBackdrops && item.themeVideoUrl) {
+        trailerUrl = item.themeVideoUrl;
+        console.log("🎬 Media Bar:", `Using theme video (local backdrop) for ${itemId}: ${trailerUrl.url || trailerUrl}`);
     } 
-    // 1b. Check Local Trailer if preferred
+    // 1c. Check Local Trailer if preferred
     else if (CONFIG.preferLocalTrailers && item.LocalTrailerCount > 0 && item.localTrailerUrl) {
          trailerUrl = item.localTrailerUrl;
-         console.log(`Using local trailer for ${itemId}: ${trailerUrl}`);
+         console.log("🎬 Media Bar:", `Using local trailer for ${itemId}: ${trailerUrl}`);
     }
-    // 1c. Fallback to Remote Trailer
+    // 1d. Fallback to Remote Trailer
     else if (item.RemoteTrailers && item.RemoteTrailers.length > 0) {
       trailerUrl = item.RemoteTrailers[0].Url;
     }
+    // 1e. Final Fallback to Local Trailer (even if not preferred)
+    else if (item.LocalTrailerCount > 0 && item.localTrailerUrl) {
+         trailerUrl = item.localTrailerUrl;
+         console.log("🎬 Media Bar:", `Using local trailer fallback for ${itemId}: ${trailerUrl}`);
+    }
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     // Client Setting Overrides
     const enableVideo = MediaBarEnhancedSettingsManager.getSetting('videoBackdrops', CONFIG.enableVideoBackdrop);
@@ -1597,27 +1687,50 @@ const SlideCreator = {
       let videoId = null;
 
       try {
-        const urlObj = new URL(trailerUrl);
-        if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        let urlToCheck = trailerUrl;
+        if (typeof trailerUrl === 'object' && trailerUrl.url) {
+            urlToCheck = trailerUrl.url;
+        }
+
+        const urlObjChecked = new URL(urlToCheck);
+        if (urlObjChecked.hostname.includes('youtube.com') || urlObjChecked.hostname.includes('youtu.be')) {
           isYoutube = true;
-          videoId = urlObj.searchParams.get('v');
-          if (!videoId && urlObj.hostname.includes('youtu.be')) {
-            videoId = urlObj.pathname.substring(1);
+          videoId = urlObjChecked.searchParams.get('v');
+          if (!videoId && urlObjChecked.hostname.includes('youtu.be')) {
+            videoId = urlObjChecked.pathname.substring(1);
           }
         }
       } catch (e) {
-        console.warn("Invalid trailer URL:", trailerUrl);
+        console.warn("🎬 Media Bar:", "Invalid trailer URL:", trailerUrl);
       }
 
-      if (isYoutube && videoId) {
+      const isLowPower = isLowPowerDevice();
+      const itemIndex = STATE.slideshow.itemIds ? STATE.slideshow.itemIds.indexOf(itemId) : -1;
+      const isActiveSlide = itemIndex !== -1 && itemIndex === STATE.slideshow.currentSlideIndex;
+      const shouldCreateVideo = !isLowPower || isActiveSlide;
+
+      if (isYoutube && videoId && shouldCreateVideo) {
         isVideo = true;
         // Create container for YouTube API
         const videoClass = CONFIG.fullWidthVideo ? "video-backdrop-full" : "video-backdrop-default";
 
-        backdrop = SlideUtils.createElement("div", {
-          className: `backdrop video-backdrop ${videoClass}`,
-          id: `youtube-player-${itemId}`
+        // Create a wrapper for opacity transition
+        videoBackdrop = SlideUtils.createElement("div", {
+            className: `backdrop video-backdrop ${videoClass}`,
+            style: "opacity: 0; transition: opacity 1.2s ease-in-out;" // Start interrupted/transparent
         });
+
+        // Create an iframe upfront
+        const ytPlayerIframe = SlideUtils.createElement("iframe", {
+          id: `youtube-player-${itemId}`,
+          src: `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`,
+          style: "width: 100%; height: 100%; border: none;",
+          allow: "autoplay; encrypted-media",
+          referrerpolicy: "strict-origin-when-cross-origin",
+          allowfullscreen: "true"
+        });
+        
+        videoBackdrop.appendChild(ytPlayerIframe);
 
         // Initialize YouTube Player
         SlideUtils.loadYouTubeIframeAPI().then(() => {
@@ -1633,7 +1746,8 @@ const SlideCreator = {
               rel: 0,
               loop: 0,
               playsinline: 1,
-              origin: window.location.origin
+              origin: window.location.origin,
+              enablejsapi: 1
             };
 
             // Determine video quality
@@ -1654,17 +1768,14 @@ const SlideCreator = {
             // Apply SponsorBlock start/end times
             if (segments.intro) {
               playerVars.start = Math.ceil(segments.intro[1]);
-              console.info(`SponsorBlock intro detected for video ${videoId}: skipping to ${playerVars.start}s`);
+              console.info("🎬 Media Bar:", `SponsorBlock intro detected for video ${videoId}: skipping to ${playerVars.start}s`);
             }
             if (segments.outro) {
               playerVars.end = Math.floor(segments.outro[0]);
-              console.info(`SponsorBlock outro detected for video ${videoId}: ending at ${playerVars.end}s`);
+              console.info("🎬 Media Bar:", `SponsorBlock outro detected for video ${videoId}: ending at ${playerVars.end}s`);
             }
 
-            STATE.slideshow.videoPlayers[itemId] = new YT.Player(`youtube-player-${itemId}`, {
-              height: '100%',
-              width: '100%',
-              videoId: videoId,
+            STATE.slideshow.videoPlayers[itemId] = new YT.Player(ytPlayerIframe, {
               playerVars: playerVars,
               events: {
                 'onReady': (event) => {
@@ -1672,6 +1783,9 @@ const SlideCreator = {
                   event.target._startTime = playerVars.start || 0;
                   event.target._endTime = playerVars.end || undefined;
                   event.target._videoId = videoId;
+                  
+                  // Store reference to wrapper for fading
+                  event.target._wrapperDiv = videoBackdrop;
 
                   if (STATE.slideshow.isMuted) {
                     event.target.mute();
@@ -1696,16 +1810,16 @@ const SlideCreator = {
                       // Re-check conditions before processing fallback
                       const isVideoPlayerOpenNow = document.querySelector('.videoPlayerContainer') || document.querySelector('.youtubePlayerContainer');
                       if (document.hidden || (isVideoPlayerOpenNow && !isVideoPlayerOpenNow.classList.contains('hide')) || !slide.classList.contains('active')) {
-                          console.log(`Navigation detected during autoplay check for ${itemId}, stopping video.`);
+                          console.log("🎬 Media Bar:", `Navigation detected during autoplay check for ${itemId}, stopping video.`);
                           try {
                             event.target.stopVideo();
-                          } catch (e) { console.warn("Error stopping video in timeout:", e); }
+                          } catch (e) { console.warn("🎬 Media Bar:", "Error stopping video in timeout:", e); }
                           return;
                       }
 
                       if (event.target.getPlayerState() !== YT.PlayerState.PLAYING &&
                         event.target.getPlayerState() !== YT.PlayerState.BUFFERING) {
-                        console.warn(`Autoplay blocked for ${itemId}, attempting muted fallback`);
+                        console.warn("🎬 Media Bar:", `Autoplay blocked for ${itemId}, attempting muted fallback`);
                         event.target.mute();
                         event.target.playVideo();
                       }
@@ -1721,15 +1835,22 @@ const SlideCreator = {
                   }
                 },
                 'onStateChange': (event) => {
+                  // Fade in when playing
+                  if (event.data === YT.PlayerState.PLAYING) {
+                      if (event.target._wrapperDiv) {
+                          event.target._wrapperDiv.style.opacity = "1";
+                      }
+                  }
+                  
                   if (event.data === YT.PlayerState.ENDED) {
-                    if (CONFIG.waitForTrailerToEnd) {
+                    const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
+                    if (slide && slide.classList.contains('active')) {
                       SlideshowManager.nextSlide();
-                    } else {
-                      event.target.playVideo(); // Loop if not waiting for end if trailer is shorter than slide duration
                     }
                   }
                 },
-                'onError': () => {
+                'onError': (event) => {
+                  console.warn("🎬 Media Bar:", `YouTube player error ${event.data} for video ${videoId}`);
                   // Fallback to next slide on error
                   if (CONFIG.waitForTrailerToEnd) {
                     SlideshowManager.nextSlide();
@@ -1741,57 +1862,71 @@ const SlideCreator = {
         });
 
         // 2. Check for local video trailers in MediaSources if yt is not available
-      } else if (!isYoutube) {
+      } else if (!isYoutube && shouldCreateVideo) {
         isVideo = true;
 
+        const videoSrc = (typeof trailerUrl === 'object' ? trailerUrl.url : trailerUrl);
         const videoAttributes = {
           className: "backdrop video-backdrop",
-          src: trailerUrl,
-          autoplay: false,
-          preload: "auto",
-          loop: false,
-          style: "object-fit: cover; object-position: center center; width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none;"
+          preload: "none",
+          disablePictureInPicture: true,
+          "data-src": videoSrc,
+          style: "object-fit: cover; object-position: center center; width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; opacity: 0; transition: opacity 1.2s ease-in-out;"
         };
 
-        if (STATE.slideshow.isMuted) {
-          videoAttributes.muted = "";
-        }
+        videoAttributes.muted = "";
 
-        backdrop = SlideUtils.createElement("video", videoAttributes);
+        videoBackdrop = SlideUtils.createElement("video", videoAttributes);
+        videoBackdrop.volume = 0.4;
 
-        if (!STATE.slideshow.isMuted) {
-          backdrop.volume = 0.4;
-        }
+        STATE.slideshow.videoPlayers[itemId] = videoBackdrop;
 
-        STATE.slideshow.videoPlayers[itemId] = backdrop;
-
-        backdrop.addEventListener('play', () => {
+        videoBackdrop.addEventListener('play', (event) => {
+          const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
+          if (!slide || !slide.classList.contains('active')) {
+            console.log("🎬 Media Bar:", `Local video ${itemId} started playing but slide is not active, pausing.`);
+            event.target.pause();
+            event.target.currentTime = 0;
+            return;
+          }
+          
+          // Fade in
+          event.target.style.opacity = "1";
+          
           if (CONFIG.waitForTrailerToEnd && STATE.slideshow.slideInterval) {
             STATE.slideshow.slideInterval.stop();
           }
         });
 
-        backdrop.addEventListener('ended', () => {
-          if (CONFIG.waitForTrailerToEnd) {
-            SlideshowManager.nextSlide();
-          }
+        videoBackdrop.addEventListener('ended', (event) => {
+            const slide = event.target.closest('.slide');
+            if (slide && slide.classList.contains('active')) {
+              SlideshowManager.nextSlide();
+            }
         });
 
-        backdrop.addEventListener('error', () => {
-          if (CONFIG.waitForTrailerToEnd) {
+        videoBackdrop.addEventListener('error', (event) => {
+          console.warn("🎬 Media Bar:", `Local video error for item ${itemId}`);
+          const slide = event.target.closest('.slide');
+          if (slide && slide.classList.contains('active')) {
             SlideshowManager.nextSlide();
           }
         });
       }
     }
 
-    if (!isVideo) {
-      backdrop = SlideUtils.createElement("img", {
-        className: "backdrop high-quality",
-        src: this.buildImageUrl(item, "Backdrop", 0, serverAddress, 60),
-        alt: LocalizationUtils.getLocalizedString('Backdrop', 'Backdrop'),
-        loading: "eager",
-      });
+    // Always create a static backdrop image (to show while video loads or if no video)
+    backdrop = SlideUtils.createElement("img", {
+      className: "backdrop high-quality",
+      src: this.buildImageUrl(item, "Backdrop", 0, serverAddress, 60),
+      alt: LocalizationUtils.getLocalizedString('Backdrop', 'Backdrop'),
+      loading: "eager",
+    });
+
+    // If video, static backdrop should be strictly a background (no animation)
+    if (isVideo) {
+        backdrop.style.animation = "none";
+        backdrop.style.transition = "none";
     }
 
     const backdropOverlay = SlideUtils.createElement("div", {
@@ -1801,7 +1936,13 @@ const SlideCreator = {
     const backdropContainer = SlideUtils.createElement("div", {
       className: "backdrop-container" + (isVideo && CONFIG.fullWidthVideo ? " full-width-video" : ""),
     });
+    
     backdropContainer.append(backdrop, backdropOverlay);
+
+    // If video exists, append on top of static backdrop
+    if (isVideo && videoBackdrop) {
+        backdropContainer.appendChild(videoBackdrop);
+    }
 
     const logo = SlideUtils.createElement("img", {
       className: "logo high-quality",
@@ -2037,11 +2178,20 @@ const SlideCreator = {
 
   /**
    * Creates a trailer button
-   * @param {string} url - Trailer URL
+   * @param {string|Object} trailerInfo - Trailer URL string or object {id, url}
    * @returns {HTMLElement} Trailer button element
    */
-  createTrailerButton(url) {
+  createTrailerButton(trailerInfo) {
     const trailerText = LocalizationUtils.getLocalizedString('Trailer', 'Trailer');
+    
+    let url = trailerInfo;
+    let localTrailerId = null;
+
+    if (typeof trailerInfo === 'object' && trailerInfo !== null) {
+        url = trailerInfo.url;
+        localTrailerId = trailerInfo.id;
+    }
+
     return SlideUtils.createElement("button", {
       className: "detailButton trailer-button",
       innerHTML: `<span class="material-icons">movie</span> <span class="trailer-text">${trailerText}</span>`,
@@ -2049,7 +2199,13 @@ const SlideCreator = {
       onclick: (e) => {
         e.preventDefault();
         e.stopPropagation();
-        SlideUtils.openVideoModal(url);
+        
+        if (localTrailerId) {
+            // Play local trailer using native player
+            ApiUtils.playItem(localTrailerId);
+        } else {
+            SlideUtils.openVideoModal(url);
+        }
       },
     });
   },
@@ -2097,6 +2253,11 @@ const SlideCreator = {
           item.localTrailerUrl = await ApiUtils.fetchLocalTrailer(itemId);
       }
 
+      // Pre-fetch theme video URL if needed
+      if (CONFIG.preferLocalBackdrops) {
+          item.themeVideoUrl = await ApiUtils.fetchThemeVideos(itemId);
+      }
+
       const slideElement = this.createSlideElement(
         item,
         item.Type === "Movie" ? "Movie" : "TV Show"
@@ -2108,7 +2269,7 @@ const SlideCreator = {
 
       return slideElement;
     } catch (error) {
-      console.error("Error creating slide for item:", error, itemId);
+      console.error("🎬 Media Bar:", "Error creating slide for item:", error, itemId);
       return null;
     }
   },
@@ -2120,6 +2281,8 @@ const SlideCreator = {
 const SlideshowManager = {
 
   createPaginationDots() {
+    if (!CONFIG.showPaginationDots) return;
+
     let dotsContainer = document.querySelector(".dots-container");
     if (!dotsContainer) {
       dotsContainer = document.createElement("div");
@@ -2207,7 +2370,7 @@ const SlideshowManager = {
         this.upgradeSlideImageQuality(currentSlide);
 
         if (!currentSlide) {
-          console.error(`Failed to create slide for item ${currentItemId}`);
+          console.error("🎬 Media Bar:", `Failed to create slide for item ${currentItemId}`);
           STATE.slideshow.isTransitioning = false;
           setTimeout(() => this.nextSlide(), 500);
           return;
@@ -2223,18 +2386,33 @@ const SlideshowManager = {
       currentSlide.classList.add("active");
 
       // Manage Video Playback: Stop others, Play current
-
-      // 1. Pause all other YouTube players
-      if (STATE.slideshow.videoPlayers) {
-        Object.keys(STATE.slideshow.videoPlayers).forEach(id => {
-          if (id !== currentItemId) {
-            const p = STATE.slideshow.videoPlayers[id];
-            if (p && typeof p.pauseVideo === 'function') {
-              p.pauseVideo();
+      // 1. Stop all other YouTube players and local video elements, release connections
+      setTimeout(() => {
+        if (STATE.slideshow.videoPlayers) {
+          Object.keys(STATE.slideshow.videoPlayers).forEach(id => {
+            if (id !== currentItemId) {
+              const p = STATE.slideshow.videoPlayers[id];
+              if (!p) return;
+              // YouTube player
+              if (typeof p.pauseVideo === 'function') {
+                p.pauseVideo();
+              }
+              // HTML5 <video> element (local trailers), release HTTP connection
+              if (p instanceof HTMLVideoElement) {
+                p.pause();
+                p.muted = true;
+                p.currentTime = 0;
+                // Save src to data-src and release the HTTP streaming connection
+                if (p.src && !p.getAttribute('data-src')) {
+                  p.setAttribute('data-src', p.src);
+                }
+                p.removeAttribute('src');
+                p.load();
+              }
             }
-          }
-        });
-      }
+          });
+        }
+      }, CONFIG.fadeTransitionDuration);
 
       // 2. Pause all other HTML5 videos e.g. local trailers
       document.querySelectorAll('video').forEach(video => {
@@ -2246,6 +2424,18 @@ const SlideshowManager = {
       // 3. Play and Reset current video
       const videoBackdrop = currentSlide.querySelector('.video-backdrop');
 
+      // Auto-unpause when a video slide becomes active
+      if (videoBackdrop && STATE.slideshow.isPaused) {
+          STATE.slideshow.isPaused = false;
+          const pauseButton = document.querySelector('.pause-button');
+          if (pauseButton) {
+              pauseButton.innerHTML = '<i class="material-icons">pause</i>';
+              const pauseLabel = LocalizationUtils.getLocalizedString('ButtonPause', 'Pause');
+              pauseButton.setAttribute("aria-label", pauseLabel);
+              pauseButton.setAttribute("title", pauseLabel);
+          }
+      }
+
       // Update mute button visibility
       const muteButton = document.querySelector('.mute-button');
       if (muteButton) {
@@ -2255,6 +2445,12 @@ const SlideshowManager = {
 
       if (videoBackdrop) {
         if (videoBackdrop.tagName === 'VIDEO') {
+          // Restore src from data-src if it was deactivated to release connections
+          const lazySrc = videoBackdrop.getAttribute('data-src');
+          if (lazySrc && !videoBackdrop.src) {
+            videoBackdrop.src = lazySrc;
+          }
+
           videoBackdrop.currentTime = 0;
 
           videoBackdrop.muted = STATE.slideshow.isMuted;
@@ -2265,10 +2461,10 @@ const SlideshowManager = {
           videoBackdrop.play().catch(e => {
             // Check if it actually started playing after a short delay (handling autoplay blocks)
             setTimeout(() => {
-              if (videoBackdrop.paused) {
-                console.warn(`Autoplay blocked for ${itemId}, attempting muted fallback`);
+              if (videoBackdrop.paused && currentSlide.classList.contains('active')) {
+                console.warn("🎬 Media Bar:", `Autoplay blocked for ${currentItemId}, attempting muted fallback`);
                 videoBackdrop.muted = true;
-                videoBackdrop.play().catch(err => console.error("Muted fallback failed", err));
+                videoBackdrop.play().catch(err => console.error("🎬 Media Bar:", "Muted fallback failed", err));
               }
             }, 1000);
           });
@@ -2291,10 +2487,11 @@ const SlideshowManager = {
 
             // Check if playback successfully started, otherwise fallback to muted
             setTimeout(() => {
+              if (!currentSlide.classList.contains('active')) return;
               if (player.getPlayerState &&
                 player.getPlayerState() !== YT.PlayerState.PLAYING &&
                 player.getPlayerState() !== YT.PlayerState.BUFFERING) {
-                console.log("YouTube loadVideoById didn't start playback, retrying muted...");
+                console.log("🎬 Media Bar:", "YouTube loadVideoById didn't start playback, retrying muted...");
                 player.mute();
                 player.playVideo();
               }
@@ -2315,7 +2512,8 @@ const SlideshowManager = {
         if (backdrop && !backdrop.classList.contains("video-backdrop")) {
           backdrop.classList.add("animate");
         }
-        currentSlide.querySelector(".logo").classList.add("animate");
+        const logo = currentSlide.querySelector(".logo");
+        if (logo) logo.classList.add("animate");
       }
 
       STATE.slideshow.currentSlideIndex = index;
@@ -2340,7 +2538,8 @@ const SlideshowManager = {
       this.updateDots();
 
       // Only restart interval if we are NOT waiting for a video to end
-      const hasVideo = currentSlide.querySelector('.video-backdrop');
+      const hasVideo = currentSlide.querySelector('.video-backdrop') || 
+        (STATE.slideshow.videoPlayers && STATE.slideshow.videoPlayers[currentItemId]);
       if (STATE.slideshow.slideInterval && !STATE.slideshow.isPaused) {
         if (CONFIG.waitForTrailerToEnd && hasVideo) {
           STATE.slideshow.slideInterval.stop();
@@ -2351,13 +2550,13 @@ const SlideshowManager = {
 
       this.pruneSlideCache();
     } catch (error) {
-      console.error("Error updating current slide:", error);
+      console.error("🎬 Media Bar:", "Error updating current slide:", error);
     } finally {
       setTimeout(() => {
         STATE.slideshow.isTransitioning = false;
 
         if (previousVisibleSlide) {
-          const enableAnimations = MediaBarEnhancedSettingsManager.getSetting('slideAnimations', CONFIG.slideAnimationEnabled);
+          const enableAnimations = MediaBarEnhancedSettingsManager.getSetting('slideAnimations', CONFIG.slideAnimationEnabled) && !isLowPowerDevice();
           if (enableAnimations) {
             const prevBackdrop = previousVisibleSlide.querySelector(".backdrop");
             const prevLogo = previousVisibleSlide.querySelector(".logo");
@@ -2398,18 +2597,33 @@ const SlideshowManager = {
    */
   async preloadAdjacentSlides(currentIndex) {
     const totalItems = STATE.slideshow.totalItems;
-    const preloadCount = CONFIG.preloadCount;
+    let preloadCount = Math.min(Math.max(CONFIG.preloadCount || 1, 1), 5);
+    if (isLowPowerDevice()) preloadCount = 1; // Strict limit for TVs
+    
+    const preloadedIds = new Set();
 
-    const nextIndex = (currentIndex + 1) % totalItems;
-    const itemId = STATE.slideshow.itemIds[nextIndex];
+    // Preload next slides
+    for (let i = 1; i <= preloadCount; i++) {
+        const nextIndex = (currentIndex + i) % totalItems;
+        if (nextIndex === currentIndex) break;
 
-    await SlideCreator.createSlideForItemId(itemId);
+        const itemId = STATE.slideshow.itemIds[nextIndex];
+        if (!preloadedIds.has(itemId)) {
+             preloadedIds.add(itemId);
+             SlideCreator.createSlideForItemId(itemId);
+        }
+    }
 
-    if (preloadCount > 1) {
-      const prevIndex = (currentIndex - 1 + totalItems) % totalItems;
-      const prevItemId = STATE.slideshow.itemIds[prevIndex];
+    // Preload previous slides
+    for (let i = 1; i <= preloadCount; i++) {
+        const prevIndex = (currentIndex - i + totalItems) % totalItems;
+        if (prevIndex === currentIndex) break;
 
-      SlideCreator.createSlideForItemId(prevItemId);
+        const prevItemId = STATE.slideshow.itemIds[prevIndex];
+        if (!preloadedIds.has(prevItemId)) {
+             preloadedIds.add(prevItemId);
+             SlideCreator.createSlideForItemId(prevItemId);
+        }
     }
   },
 
@@ -2437,19 +2651,35 @@ const SlideshowManager = {
    */
   pruneSlideCache() {
     const currentIndex = STATE.slideshow.currentSlideIndex;
-    const keepRange = 5;
+    const keepRange = CONFIG.preloadCount + 1;
+    let prunedAny = false;
 
     Object.keys(STATE.slideshow.createdSlides).forEach((itemId) => {
       const index = STATE.slideshow.itemIds.indexOf(itemId);
       if (index === -1) return;
 
-      const distance = Math.abs(index - currentIndex);
+      const totalItems = STATE.slideshow.itemIds.length;
+      let distance = Math.abs(index - currentIndex);
+      if (totalItems > keepRange * 2) {
+          distance = Math.min(distance, totalItems - distance);
+      }
+
       if (distance > keepRange) {
         // Destroy video player if exists
         if (STATE.slideshow.videoPlayers[itemId]) {
           const player = STATE.slideshow.videoPlayers[itemId];
           if (typeof player.destroy === 'function') {
+            // YouTube player
             player.destroy();
+          } else if (player instanceof HTMLVideoElement) {
+            // HTML5 video, release HTTP streaming connection
+            player.pause();
+            // Save src to data-src and release the HTTP streaming connection
+            if (player.src && !player.getAttribute('data-src')) {
+              player.setAttribute('data-src', player.src);
+            }
+            player.removeAttribute('src');
+            player.load();
           }
           delete STATE.slideshow.videoPlayers[itemId];
         }
@@ -2462,10 +2692,25 @@ const SlideshowManager = {
         if (slide) slide.remove();
 
         delete STATE.slideshow.createdSlides[itemId];
+        prunedAny = true;
 
-        console.log(`Pruned slide ${itemId} at distance ${distance} from view`);
+        console.log("🎬 Media Bar:", `Pruned slide ${itemId} at distance ${distance} from view`);
       }
     });
+
+    if (prunedAny) {
+      const isTvMode = (window.layoutManager && window.layoutManager.tv) ||
+        document.documentElement.classList.contains('layout-tv') ||
+        document.body.classList.contains('layout-tv');
+      if (isTvMode) {
+        setTimeout(() => {
+          const container = document.getElementById("slides-container");
+          if (container && container.style.display !== 'none') {
+            container.focus({ preventScroll: true });
+          }
+        }, 0);
+      }
+    }
   },
 
   toggleMute() {
@@ -2496,7 +2741,7 @@ const SlideshowManager = {
         }
 
         video.play().catch(error => {
-          console.warn("Unmuted play blocked, reverting to muted...");
+          console.warn("🎬 Media Bar:", "Unmuted play blocked, reverting to muted...");
           STATE.slideshow.isMuted = true;
           video.muted = true;
           video.play();
@@ -2517,7 +2762,7 @@ const SlideshowManager = {
           setTimeout(() => {
             const state = player.getPlayerState();
             if (state === 2) {
-              console.log("Video was paused after unmute...");
+              console.log("🎬 Media Bar:", "Video was paused after unmute...");
               STATE.slideshow.isMuted = true;
               player.mute();
               player.playVideo();
@@ -2608,19 +2853,27 @@ const SlideshowManager = {
             player.pauseVideo();
           }
         } catch (e) {
-          console.warn("Error pausing/stopping YouTube player:", e);
+          console.warn("🎬 Media Bar:", "Error pausing/stopping YouTube player:", e);
         }
       });
     }
 
-    // 2. Pause all HTML5 videos
+    // 2. Stop and mute all HTML5 videos, release connections
     const container = document.getElementById("slides-container");
     if (container) {
       container.querySelectorAll('video').forEach(video => {
         try {
           video.pause();
+          video.muted = true;
+          video.currentTime = 0;
+          // Save src and release HTTP streaming connection
+          if (video.src && !video.getAttribute('data-src')) {
+            video.setAttribute('data-src', video.src);
+          }
+          video.removeAttribute('src');
+          video.load();
         } catch (e) {
-          console.warn("Error pausing HTML5 video:", e);
+          console.warn("🎬 Media Bar:", "Error stopping HTML5 video:", e);
         }
       });
     }
@@ -2638,19 +2891,30 @@ const SlideshowManager = {
     const currentSlide = document.querySelector(`.slide[data-item-id="${currentItemId}"]`);
     if (!currentSlide) return;
 
-    // 1. Try YouTube Player
-    const ytPlayer = STATE.slideshow.videoPlayers[currentItemId];
+    // YouTube player: just resume, don't reload
+    const ytPlayer = STATE.slideshow.videoPlayers?.[currentItemId];
     if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+      if (STATE.slideshow.isMuted) {
+        if (typeof ytPlayer.mute === 'function') ytPlayer.mute();
+      } else {
+        if (typeof ytPlayer.unMute === 'function') ytPlayer.unMute();
+        if (typeof ytPlayer.setVolume === 'function') ytPlayer.setVolume(40);
+      }
       ytPlayer.playVideo();
+      return;
     }
 
-    // 2. Try HTML5 Video
-    const html5Video = currentSlide.querySelector('video');
+    // HTML5 video: restore src if needed, then resume
+    const html5Video = currentSlide.querySelector('video.video-backdrop');
     if (html5Video) {
-      if (STATE.slideshow.isMuted) {
-        html5Video.muted = true;
+      // Restore src from data-src if it was cleared to release connections
+      const lazySrc = html5Video.getAttribute('data-src');
+      if (lazySrc && !html5Video.src) {
+        html5Video.src = lazySrc;
       }
-      html5Video.play().catch(e => console.warn("Error resuming HTML5 video:", e));
+      html5Video.muted = STATE.slideshow.isMuted;
+      if (!STATE.slideshow.isMuted) html5Video.volume = 0.4;
+      html5Video.play().catch(e => console.warn("🎬 Media Bar:", "Error resuming HTML5 video:", e));
     }
   },
 
@@ -2797,22 +3061,96 @@ const SlideshowManager = {
   },
 
   /**
-   * Parses custom media IDs, handling seasonal content if enabled
+   * Parses custom media IDs, handling seasonal content if enabled.
+   * If Seasonal Content is enabled:
+   *  - Check if any defined season matches the current date.
+   *  - If match: Return IDs from that season.
+   *  - If NO match: Fall back to Default Custom IDs.
+   * If Custom Media IDs are enabled (and no seasonal match):
+   *  - Return Default Custom IDs.
+   * If no Custom Media IDs are enabled:
+   *  - Return empty array (triggering random fallback).
    * @returns {string[]} Array of media IDs
    */
   parseCustomIds() {
-    if (!CONFIG.enableSeasonalContent) {
-    return CONFIG.customMediaIds
-      .split(/[\n,]/).map((line) => {
+    let idsString = CONFIG.customMediaIds;
+    let usingSeasonal = false;
+
+    if (CONFIG.enableSeasonalContent) {
+      try {
+        const sections = JSON.parse(CONFIG.seasonalSections || "[]");
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1; // 1-12
+        const currentDay = currentDate.getDate(); // 1-31
+
+        for (const section of sections) {
+           const startDay = parseInt(section.StartDay);
+           const startMonth = parseInt(section.StartMonth);
+           const endDay = parseInt(section.EndDay);
+           const endMonth = parseInt(section.EndMonth);
+           
+           let isInRange = false;
+
+           if (startMonth === endMonth) {
+             if (currentMonth === startMonth && currentDay >= startDay && currentDay <= endDay) {
+               isInRange = true;
+             }
+           } else if (startMonth < endMonth) {
+             // Normal range
+             if (
+               (currentMonth > startMonth && currentMonth < endMonth) ||
+               (currentMonth === startMonth && currentDay >= startDay) ||
+               (currentMonth === endMonth && currentDay <= endDay)
+             ) {
+               isInRange = true;
+             }
+           } else {
+             // Wrap around year
+             if (
+               (currentMonth > startMonth || currentMonth < endMonth) ||
+               (currentMonth === startMonth && currentDay >= startDay) ||
+               (currentMonth === endMonth && currentDay <= endDay)
+             ) {
+               isInRange = true;
+             }
+           }
+
+           if (isInRange) {
+             console.log("🎬 Media Bar:", `Seasonal match found: ${section.Name}`);
+             idsString = section.MediaIds;
+             usingSeasonal = true;
+             break; // Use first matching season
+           }
+        }
+      } catch (e) {
+        console.error("🎬 Media Bar:", "Error parsing seasonal sections in JS:", e);
+      }
+    }
+
+    // If NOT using seasonal content (disabled or no match), 
+    // Custom IDs are disabled, return empty to skip to random
+    if (!usingSeasonal && !CONFIG.enableCustomMediaIds) {
+        return [];
+    }
+    
+    // Parse the resulting string (either seasonal or default)
+    if (!idsString) return [];
+
+    return idsString
+      .split(/[\n,]/)
+      .map((line) => {
         const urlMatch = line.match(/\[(.*?)\]/);
         let id = line;
         if (urlMatch) {
             const url = urlMatch[1];
+            // Remove the [url] part from the ID string for parsing
             id = line.replace(/\[.*?\]/, '').trim();
+            // Attempt to extract GUID if present
             const guidMatch = id.match(/([0-9a-f]{32})/i);
             if (guidMatch) {
                 id = guidMatch[1];
             } else {
+                // Fallback: split by pipe if used
                 id = id.split('|')[0].trim();
             }
             STATE.slideshow.customTrailerUrls[id] = url;
@@ -2821,83 +3159,6 @@ const SlideshowManager = {
       }) 
       .map((id) => id.trim())
       .filter((id) => id);
-    } else {
-      return this.parseSeasonalIds();
-    }
-  },
-
-  /**
-   * Parses custom media IDs, handling seasonal content if enabled
-   * @returns {string[]} Array of media IDs
-   */
-  parseSeasonalIds() {
-    console.log("Using Seasonal Content Mode");
-    const lines = CONFIG.customMediaIds.split('\n');
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1; // 1-12
-    const currentDay = currentDate.getDate(); // 1-31
-    const rawIds = [];
-
-    for (const line of lines) {
-      const match = line.match(/^\s*(\d{1,2})\.(\d{1,2})-(\d{1,2})\.(\d{1,2})\s*\|.*\|(.*)$/) ||
-        line.match(/^\s*(\d{1,2})\.(\d{1,2})-(\d{1,2})\.(\d{1,2})\s*\|(.*)$/);
-
-      if (match) {
-        const startDay = parseInt(match[1]);
-        const startMonth = parseInt(match[2]);
-        const endDay = parseInt(match[3]);
-        const endMonth = parseInt(match[4]);
-        const idsPart = match[5];
-
-        let isInRange = false;
-
-        if (startMonth === endMonth) {
-          if (currentMonth === startMonth && currentDay >= startDay && currentDay <= endDay) {
-            isInRange = true;
-          }
-        } else if (startMonth < endMonth) {
-          // Normal range spanning months (e.g. 15.06 - 15.08)
-          if (
-            (currentMonth > startMonth && currentMonth < endMonth) ||
-            (currentMonth === startMonth && currentDay >= startDay) ||
-            (currentMonth === endMonth && currentDay <= endDay)
-          ) {
-            isInRange = true;
-          }
-        } else {
-          // Wrap around year (e.g. 01.12 - 15.01)
-          if (
-            (currentMonth > startMonth || currentMonth < endMonth) ||
-            (currentMonth === startMonth && currentDay >= startDay) ||
-            (currentMonth === endMonth && currentDay <= endDay)
-          ) {
-            isInRange = true;
-          }
-        }
-
-        if (isInRange) {
-          console.log(`Seasonal match found: ${line}`);
-          const ids = idsPart.split(/[,]/).map(line => {
-              const urlMatch = line.match(/\[(.*?)\]/);
-              let id = line;
-              if (urlMatch) {
-                  const url = urlMatch[1];
-                  id = line.replace(/\[.*?\]/, '').trim();
-                  const guidMatch = id.match(/([0-9a-f]{32})/i);
-                  if (guidMatch) {
-                       id = guidMatch[1];
-                  } else {
-                       id = id.split('|')[0].trim();
-                  }
-                  STATE.slideshow.customTrailerUrls[id] = url;
-              }
-              return id.trim();
-          }).filter(id => id);
-          rawIds.push(...ids);
-        }
-      }
-    }
-    return rawIds;
   },
 
   /**
@@ -2920,14 +3181,14 @@ const SlideshowManager = {
           if (guidMatch) {
             id = guidMatch[1];
           } else {
-            console.log(`Input '${rawId}' is not a GUID, searching for Collection/Playlist by name...`);
+            console.log("🎬 Media Bar:", `Input '${rawId}' is not a GUID, searching for Collection/Playlist by name...`);
             const resolvedId = await ApiUtils.findCollectionOrPlaylistByName(rawId);
 
             if (resolvedId) {
-              console.log(`Resolved name '${rawId}' to ID: ${resolvedId}`);
+              console.log("🎬 Media Bar:", `Resolved name '${rawId}' to ID: ${resolvedId}`);
               id = resolvedId;
             } else {
-              console.warn(`Could not find Collection or Playlist with name: '${rawId}'`);
+              console.warn("🎬 Media Bar:", `Could not find Collection or Playlist with name: '${rawId}'`);
               continue; // Skip if resolution failed
             }
           }
@@ -2935,14 +3196,14 @@ const SlideshowManager = {
 
         const item = await ApiUtils.fetchItemDetails(id);
         if (item && (item.Type === 'BoxSet' || item.Type === 'Playlist')) {
-          console.log(`Found Collection/Playlist: ${id} (${item.Type}), fetching children...`);
+          console.log("🎬 Media Bar:", `Found Collection/Playlist: ${id} (${item.Type}), fetching children...`);
           const children = await ApiUtils.fetchCollectionItems(id);
           finalIds.push(...children);
         } else if (item) {
-          finalIds.push(id);
+          finalIds.push({ Id: item.Id, Type: item.Type });
         }
       } catch (e) {
-        console.warn(`Error resolving item ${id}:`, e);
+        console.warn("🎬 Media Bar:", `Error resolving item ${rawId}:`, e);
       }
     }
     return finalIds;
@@ -2957,20 +3218,46 @@ const SlideshowManager = {
       let itemIds = [];
 
       // 1. Try Custom Media/Collection IDs from Config & seasonal content
-      if (CONFIG.enableCustomMediaIds && CONFIG.customMediaIds) {
-        console.log("Using Custom Media IDs from configuration");
+      if (CONFIG.enableCustomMediaIds || CONFIG.enableSeasonalContent) {
+        console.log("🎬 Media Bar:", "Using Custom Media IDs from configuration");
         const rawIds = this.parseCustomIds();
-        itemIds = await this.resolveCollectionsAndItems(rawIds);
+        const resolvedItems = await this.resolveCollectionsAndItems(rawIds);
+
+        // Apply max items limit to custom IDs if enabled
+        if (CONFIG.applyLimitsToCustomIds) {
+            let movieCount = 0;
+            let showCount = 0;
+            let keptItems = [];
+            
+            for (const item of resolvedItems) {
+                 if (keptItems.length >= CONFIG.maxItems) break;
+                 
+                 if (item.Type === 'Movie') {
+                     if (movieCount < CONFIG.maxMovies) {
+                         movieCount++;
+                         keptItems.push(item);
+                     }
+                 } else if (item.Type === 'Series' || item.Type === 'Season' || item.Type === 'Episode') { 
+                     // Count Seasons/Episodes as TV Shows
+                     if (showCount < CONFIG.maxTvShows) {
+                         showCount++;
+                         keptItems.push(item);
+                     }
+                 } else {
+                     // Other types: count towards total only
+                     keptItems.push(item);
+                 }
+            }
+            itemIds = keptItems.map(i => i.Id);
+            console.log("🎬 Media Bar:", `Applied limits to custom IDs: ${itemIds.length} items (Movies: ${movieCount}, Shows: ${showCount})`);
+        } else {
+            itemIds = resolvedItems.map(i => i.Id);
+        }
       }
 
-      // 2. Try Avatar List (list.txt)
+      // 2. Fallback to server query (Random)
       if (itemIds.length === 0) {
-        itemIds = await ApiUtils.fetchItemIdsFromList();
-      }
-
-      // 3. Fallback to server query (Random)
-      if (itemIds.length === 0) {
-        console.log("No custom list found, fetching random items from server...");
+        console.log("🎬 Media Bar:", "No custom list found, fetching random items from server...");
         itemIds = await ApiUtils.fetchItemIdsFromServer();
         
         if (CONFIG.sortBy === 'Random') {
@@ -2982,7 +3269,7 @@ const SlideshowManager = {
              itemIds = SlideUtils.shuffleArray(itemIds);
         } else if (CONFIG.sortBy !== 'Original') {
             // Client-side sort required...
-             console.log(`Sorting ${itemIds.length} custom items by ${CONFIG.sortBy} ${CONFIG.sortOrder}`);
+             console.log("🎬 Media Bar:", `Sorting ${itemIds.length} custom items by ${CONFIG.sortBy} ${CONFIG.sortOrder}`);
              const itemsWithDetails = [];
              for (const id of itemIds) {
                  const item = await ApiUtils.fetchItemDetails(id);
@@ -3024,7 +3311,7 @@ const SlideshowManager = {
         }
       }
     } catch (error) {
-      console.error("Error loading slideshow data:", error);
+      console.error("🎬 Media Bar:", "Error loading slideshow data:", error);
     } finally {
       STATE.slideshow.isLoading = false;
     }
@@ -3170,7 +3457,7 @@ const MediaBarEnhancedSettingsManager = {
 
     this.initialized = true;
     this.injectSettingsIcon();
-    console.log("MediaBarEnhanced: Client-Side Settings Manager initialized.");
+    console.log("🎬 Media Bar:", "Client-Side Settings Manager initialized.");
   },
 
   getSetting(key, defaultValue) {
@@ -3344,7 +3631,7 @@ const initPageVisibilityHandler = () => {
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-      console.log("Tab inactive - pausing slideshow and videos");
+      console.log("🎬 Media Bar:", "Tab inactive - pausing slideshow and videos");
       wasVideoPlayingBeforeHide = STATE.slideshow.isVideoPlaying;
       
       if (STATE.slideshow.slideInterval) {
@@ -3362,7 +3649,7 @@ const initPageVisibilityHandler = () => {
               player.pauseVideo();
               STATE.slideshow.isVideoPlaying = false;
             } catch (e) {
-              console.warn("Error pausing video on tab hide:", e);
+              console.warn("🎬 Media Bar:", "Error pausing video on tab hide:", e);
             }
           } else if (player.tagName === 'VIDEO') { // HTML5 Video
              player.pause();
@@ -3371,7 +3658,7 @@ const initPageVisibilityHandler = () => {
         }
       }
     } else {
-      console.log("Tab active - resuming slideshow");
+      console.log("🎬 Media Bar:", "Tab active - resuming slideshow");
       if (!STATE.slideshow.isPaused) {
         const currentItemId = STATE.slideshow.itemIds[STATE.slideshow.currentSlideIndex];
         
@@ -3384,16 +3671,16 @@ const initPageVisibilityHandler = () => {
               player.playVideo();
               STATE.slideshow.isVideoPlaying = true;
             } catch (e) {
-              console.warn("Error resuming video on tab show:", e);
+              console.warn("🎬 Media Bar:", "Error resuming video on tab show:", e);
               if (STATE.slideshow.slideInterval) {
                 STATE.slideshow.slideInterval.start();
               }
             }
           } else if (player.tagName === 'VIDEO') { // HTML5 Video
              try {
-                player.play().catch(e => console.warn("Error resuming HTML5 video:", e));
+                player.play().catch(e => console.warn("🎬 Media Bar:", "Error resuming HTML5 video:", e));
                 STATE.slideshow.isVideoPlaying = true;
-             } catch(e) { console.warn(e); }
+             } catch(e) { console.warn("🎬 Media Bar:", e); }
           }
         } else {
           // No video was playing, just restart interval
@@ -3419,15 +3706,15 @@ const initPageVisibilityHandler = () => {
  */
 const slidesInit = async () => {
   if (STATE.slideshow.hasInitialized) {
-    console.log("⚠️ Slideshow already initialized, skipping");
+    console.log("🎬 Media Bar:", "⚠️ Slideshow already initialized, skipping");
     return;
   }
   
   if (CONFIG.enableClientSideSettings) {
       MediaBarEnhancedSettingsManager.init();
-      const isEnabled = MediaBarEnhancedSettingsManager.getSetting('enabled', true);
-      if (!isEnabled) {
-          console.log("MediaBarEnhanced: Disabled by client-side setting.");
+      const isClientSideEnabled = MediaBarEnhancedSettingsManager.getSetting('enabled', true);
+      if (!isClientSideEnabled) {
+          console.log("🎬 Media Bar:", "Disabled by client-side setting.");
           const homeSections = document.querySelector('.homeSectionsContainer');
           if (homeSections) {
             homeSections.style.top = '0';
@@ -3517,7 +3804,7 @@ const slidesInit = async () => {
   const lazyLoadObserver = initLazyLoading();
 
   try {
-    console.log("🌟 Initializing Enhanced Jellyfin Slideshow");
+    console.log("🎬 Media Bar:", "🌟 Initializing Enhanced Jellyfin Slideshow");
 
     initArrowNavigation();
 
@@ -3531,9 +3818,9 @@ const slidesInit = async () => {
 
     VisibilityObserver.init();
 
-    console.log("✅ Enhanced Jellyfin Slideshow initialized successfully");
+    console.log("🎬 Media Bar:", "✅ Enhanced Jellyfin Slideshow initialized successfully");
   } catch (error) {
-    console.error("Error initializing slideshow:", error);
+    console.error("🎬 Media Bar:", "Error initializing slideshow:", error);
     STATE.slideshow.hasInitialized = false;
   }
 };

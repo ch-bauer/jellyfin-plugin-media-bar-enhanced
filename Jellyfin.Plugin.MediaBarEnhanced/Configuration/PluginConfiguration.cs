@@ -18,10 +18,14 @@ namespace Jellyfin.Plugin.MediaBarEnhanced.Configuration
         public int PreloadCount { get; set; } = 3;
         public int FadeTransitionDuration { get; set; } = 500;
         public int MaxPaginationDots { get; set; } = 15;
+        public bool ShowPaginationDots { get; set; } = true;
         public bool SlideAnimationEnabled { get; set; } = true;
         public bool EnableVideoBackdrop { get; set; } = true;
         public bool UseSponsorBlock { get; set; } = true;
         public bool PreferLocalTrailers { get; set; } = false;
+        public bool RandomizeLocalTrailers { get; set; } = false;
+        public bool PreferLocalBackdrops { get; set; } = false;
+        public bool RandomizeThemeVideos { get; set; } = false;
         public bool WaitForTrailerToEnd { get; set; } = true;
         public bool StartMuted { get; set; } = true;
         public bool FullWidthVideo { get; set; } = true;
@@ -34,8 +38,11 @@ namespace Jellyfin.Plugin.MediaBarEnhanced.Configuration
         public bool EnableCustomMediaIds { get; set; } = true;
         public string PreferredVideoQuality { get; set; } = "Auto";
         public bool EnableSeasonalContent { get; set; } = false;
+        public string SeasonalSections { get; set; } = "[]";
         public bool IsEnabled { get; set; } = true;
         public bool EnableClientSideSettings { get; set; } = false;
+        public bool ApplyLimitsToCustomIds { get; set; } = false;
+        public bool IncludeWatchedContent { get; set; } = false;
         public string SortBy { get; set; } = "Random";
         public string SortOrder { get; set; } = "Ascending";
     }

@@ -2,7 +2,7 @@
 
 Media Bar Enhanced is a plugin for Jellyfin that introduces a customizable and interactive media bar to your dashboard view on Jellyfin web.
 
-This plugin is a fork and enhancement of the original [Media Bar by MakD](https://github.com/MakD/Jellyfin-Media-Bar), but can be installed as plugin for easier installation and management/configuration.
+This plugin is a fork and enhancement of the original [Media Bar by MakD](https://github.com/MakD/Jellyfin-Media-Bar) and my previous work on [Jellyfin-Featured-Content-Bar](https://github.com/CodeDevMLH/Jellyfin-Featured-Content-Bar), but can be installed as plugin for easier installation and management/configuration.
 
 ![logo](https://raw.githubusercontent.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/main/logo.png)
 
@@ -20,6 +20,8 @@ This plugin is a fork and enhancement of the original [Media Bar by MakD](https:
   - [Configuration](#configuration)
     - [General Settings](#general-settings)
     - [Custom Content](#custom-content)
+    - [Content Sorting](#content-sorting)
+    - [Content Limits](#content-limits)
     - [Advanced Settings](#advanced-settings)
   - [Build The Plugin By Yourself](#build-the-plugin-by-yourself)
   - [Troubleshooting](#troubleshooting)
@@ -99,6 +101,9 @@ This plugin builds upon the original Media Bar with new capabilities and improve
         <img width="513" height="575" alt="Client-Settings" src="https://github.com/user-attachments/assets/3e29a84f-f8ea-4b7b-b561-80493cb1535b" />
         </details>
     *   **Local Trailers Preference**: Option to prefer local trailers (from the media item) over online sources.
+    *   **Theme Video Support**: Option to prefer local theme videos (backdrops) over trailers.
+    *   **Randomization**: Options to randomize theme videos and local trailers if multiple versions exist.
+    *   **Include Watched Content**: Option to include watched items in the random slideshow.
     *   **Content Sorting Options**: Sort content by various criteria such as PremiereDate, ProductionYear, Random, or Original order.
     *   **Client-Side Settings**: Allow users to override settings locally on their device.
 
@@ -108,6 +113,7 @@ This plugin builds upon the original Media Bar with new capabilities and improve
 *   **Direct Play**: Click "Play" to start watching immediately
 *   **Details View**: Click "Info" to jump to the item's detail page
 *   **Add To Favorites**: Click the heart to add the item to your favorites
+*   **Customize**: Change the plugins behavior through the Jellyfin admin panel
 
 ## Installation
 
@@ -154,30 +160,62 @@ Configure the plugin via **Dashboard** > **Plugins** > **Media Bar Enhanced**.
 *   **Wait For Trailer To End**: Prevents slide transition until the video finishes.
 *   **Enable Mobile Video**: specific setting to allow video playback on mobile devices (disabled by default to save data/battery).
 *   **Show Trailer Button**: Adds a button to open the trailer in a popup modal if video backdrops are disabled (e.g. on mobile if trailers are disabled there)
+*   **Prefer Local Trailers**: If enabled, local trailers will be preferred over remote (YouTube) trailers.
+*   **Prefer Local Backdrops / Theme Videos**: If enabled, local backdrop videos (Theme Videos) will be preferred over trailers.
 
 ### Custom Content
 Define exactly what shows up in your bar.
 
 *   **Enable Custom Media IDs**: Restrict the slideshow to a specific list of IDs.
-    *   **Manual Trailer Override**: Add `[YouTube_URL]` after an ID to force a specific trailer.
+    *   **Manual Trailer Override**: Add `[YouTube_URL]` or `[Jellyfin_ID]` after an ID to force a specific trailer/video.
     *   Example ID: `a1b2c3d4e5... [https://www.youtube.com/watch?v=VIDEO_ID]`
+    *   Example ID: `z1b2c3d4e5... [Jellyfin_ID]`
+    *   **Example Mixed List**:
+        ```
+        a1b2c3d4e5f6...                         <-- Plays local item video
+        6bdu812812hd... [https://youtu.be/...]  <-- Item metadata + Custom YouTube Trailer
+        12h44h124sf7... [hdc78127z4ff...]       <-- Item metadata + Custom Jellyfin Trailer/Video etc.
+        ```
     *   Example Collection Name: `Halloween Collection [https://...] | My Description` (Note: Use `|` to separate description from name if using a name instead of an ID)
+*   **Apply Limits to Custom IDs**: If enabled, the "Content Limits" (see below) will also apply to your Custom Media IDs list. By default, custom lists show all listed items regardless of limits.
 *   **Enable Seasonal Content Mode**: Advanced date-based scheduling.
-    *   Format: `DD.MM-DD.MM | Name | ID1, ID2, ID3`
-    *   Example: `20.10-31.10 | Halloween | <ID_OF_HALLOWEEN_COLLECTION>`
-    *   If the current date matches a range, those IDs are used. Otherwise, it defaults to standard behavior or the Custom Media IDs list.
+    *   **GUI Configuration**: You can easily add "Seasons" via the **Add Season** button.
+    *   **Active Period**: Select the Start and End Day/Month for each season.
+    *   **Media IDs**: Enter the Comma-separated list of IDs (Movies, Series, Collections) for that season.
+    *   **Priority**: If the current date matches a defined season, those IDs are used. If multiple seasons overlap, the first matching one is used. If no season matches, it falls back to the Default Custom Media IDs.
 
 **How to get IDs:**
 Check the URL of an item in the web interface:
 `.../web/#/details?id=YOUR_ITEM_ID_HERE&...`
 
+### Content Sorting
+Customize the order of slides in the Media Bar.
+
+*   **Sort By**: Choose criteria like *Random*, *Premiere Date*, *Production Year*, *Critic Rating*, *Community Rating*, *Name*, or *Runtime*.
+*   **Sort Order**: Ascending or Descending.
+*   **Note**: Sorting applies to both server-fetched content AND Custom Media IDs. Select **Original** to preserve the exact order of your Custom Media IDs list.
+
+### Content Limits
+Fine-tune performance by limiting the number of items fetched from the server.
+
+*   **Total Max Items**: Maximum total items to fetch (combined).
+*   **Include Watched Content**: If enabled, the random slideshow will also include items that you have already watched.
+*   **Max Movies**: Maximum movies to include (for random selection).
+*   **Max Tv Shows**: Maximum TV shows to include (for random selection).
+*   **Preload Count**: Number of slides to preload for smooth transitions.
+    *   *Intelligent Preloading*: The plugin uses a safe preloading strategy that respects this count but handles small lists gracefully to avoid playback issues.
+*   **Max Pagination Dots**: Maximum number of dots to show. If exceeded, it switches to a counter (e.g., 1/20).
+
 ### Advanced Settings
 *   **Slide Animations**: Enable/disable the "Zoom In" effect.
 *   **Use SponsorBlock**: Skips non-content segments in YouTube trailers (if the data exists).
+*   **Preferred YouTube Quality**: Select your preferred resolution (*Auto*, *Maximum*, *1080p*, *720p*).
 *   **Start Muted**: Videos start without sound (user can unmute).
 *   **Full Width Video**: Stretches video to cover the entire width (good for desktop, crop on mobile).
 *   **Enable Loading Screen**: Enable/disable the loading indicator while the bar initializes.
 *   **Always Show Arrows**: Keeps navigation arrows visible instead of hiding them on mouse leave.
+*   **Randomize Backdrop Video**: If enabled, a random video from the backdrops/theme videos will be selected instead of the first one.
+*   **Randomize Local Trailer**: If enabled, a random local trailer will be selected instead of the first one.
 *   **Enable Keyboard Controls**:
     *   `Left`/`Right`: Change slide
     *   `Space`: Pause/Play slideshow
