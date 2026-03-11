@@ -39,6 +39,8 @@ const CONFIG = {
   fadeTransitionDuration: 500,
   maxPaginationDots: 15,
   showPaginationDots: true,
+  maxParentalRating: null,
+  maxDaysRecent: null,
   slideAnimationEnabled: true,
   enableVideoBackdrop: true,
   useSponsorBlock: true,
@@ -55,6 +57,7 @@ const CONFIG = {
   preferredVideoQuality: "Auto",
   enableKeyboardControls: true,
   alwaysShowArrows: false,
+  hideArrowsOnMobile: true,
   enableCustomMediaIds: true,
   enableSeasonalContent: false,
   customMediaIds: "",
@@ -64,6 +67,7 @@ const CONFIG = {
   sortOrder: "Ascending",
   applyLimitsToCustomIds: false,
   seasonalSections: "[]",
+  excludeSeasonalContent: true,
   isEnabled: true,
 };
 
@@ -1111,13 +1115,60 @@ const ApiUtils = {
 
       // Filter by isPlayed=False unless IncludeWatchedContent is enabled
       const playedFilter = CONFIG.includeWatchedContent ? '' : '&isPlayed=False';
+      
+      let parentalFilter = '';
+      if (CONFIG.maxParentalRating) {
+        parentalFilter = `&MaxOfficialRating=${CONFIG.maxParentalRating}`;
+      }
 
-      const response = await fetch(
-        `${STATE.jellyfinData.serverAddress}/Items?IncludeItemTypes=Movie,Series&Recursive=true&hasOverview=true&imageTypes=Logo,Backdrop&${sortParams}${playedFilter}&enableUserData=true&Limit=${CONFIG.maxItems}&fields=Id`,
-        {
-          headers: this.getAuthHeaders(),
+      let dateFilter = '';
+      if (CONFIG.maxDaysRecent) {
+        const pastDate = new Date();
+        pastDate.setDate(pastDate.getDate() - CONFIG.maxDaysRecent);
+        dateFilter = `&minDateLastSaved=${pastDate.toISOString()}`;
+      }
+      
+      // Exclude seasonal content from random lists
+      let excludeFilter = '';
+      if (CONFIG.excludeSeasonalContent && CONFIG.seasonalSections) {
+        try {
+            const sections = JSON.parse(CONFIG.seasonalSections || "[]");
+            let allExcludedIds = [];
+            
+            for (const section of sections) {
+                if (section.MediaIds) {
+                    const idsInThisSection = section.MediaIds.split(/[\n,]/)
+                        .map((line) => {
+                            const urlMatch = line.match(/\[(.*?)\]/);
+                            let id = line;
+                            if (urlMatch) {
+                                id = line.replace(/\[.*?\]/, '').trim();
+                                const guidMatch = id.match(/([0-9a-f]{32})/i);
+                                if (guidMatch) { id = guidMatch[1]; } else { id = id.split('|')[0].trim(); }
+                            }
+                            return id.trim();
+                        })
+                        .filter((id) => id);
+                    
+                    allExcludedIds.push(...idsInThisSection);
+                }
+            }
+            
+            if (allExcludedIds.length > 0) {
+                 excludeFilter = `&ExcludeItemIds=${allExcludedIds.join(',')}`;
+            }
+        } catch(e) {
+             console.error("🎬 Media Bar:", "Error extracting seasonal IDs for exclusion:", e);
         }
-      );
+      }
+
+      const fetchItems = async (currentDateFilter) => {
+        const url = `${STATE.jellyfinData.serverAddress}/Items?IncludeItemTypes=Movie,Series&Recursive=true&hasOverview=true&imageTypes=Logo,Backdrop&${sortParams}${playedFilter}${parentalFilter}${currentDateFilter}${excludeFilter}&enableUserData=true&Limit=${CONFIG.maxItems}&fields=Id,DateCreated`;
+        const resp = await fetch(url, { headers: this.getAuthHeaders() });
+        return resp;
+      };
+
+      let response = await fetchItems(dateFilter);
 
       if (!response.ok) {
         console.error("🎬 Media Bar:", 
@@ -1126,12 +1177,32 @@ const ApiUtils = {
         return [];
       }
 
-      const data = await response.json();
-      const items = data.Items || [];
+      let data = await response.json();
+      let items = data.Items || [];
 
-      console.log("🎬 Media Bar:", 
-        `Successfully fetched ${items.length} random items from server`
-      );
+      // Local exact DateCreated filter: minDateLastSaved pulls items that were merely modified recently (e.g. metadata updates)
+      // explicitly discard them if their actual DateCreated is older than X days
+      if (CONFIG.maxDaysRecent && dateFilter !== '') {
+        const pastDate = new Date();
+        pastDate.setDate(pastDate.getDate() - CONFIG.maxDaysRecent);
+        items = items.filter(item => {
+            if (!item.DateCreated) return true;
+            return new Date(item.DateCreated) >= pastDate;
+        });
+      }
+
+      // Fallback: If we have a date filter but no items are returned, try again without it
+      if (items.length === 0 && dateFilter !== '') {
+        console.warn("🎬 Media Bar:", `No items found within the last ${CONFIG.maxDaysRecent} days. Falling back to random fetching.`);
+        response = await fetchItems('');
+        
+        if (response.ok) {
+            data = await response.json();
+            items = data.Items || [];
+        }
+      }
+
+      console.log("🎬 Media Bar:", `Successfully fetched ${items.length} random items from server`);
 
       return items.map((item) => item.Id);
     } catch (error) {
@@ -2383,6 +2454,7 @@ const SlideshowManager = {
         previousVisibleSlide.classList.remove("active");
       }
 
+      void currentSlide.offsetWidth;
       currentSlide.classList.add("active");
 
       // Manage Video Playback: Stop others, Play current
@@ -2660,9 +2732,9 @@ const SlideshowManager = {
 
       const totalItems = STATE.slideshow.itemIds.length;
       let distance = Math.abs(index - currentIndex);
-      if (totalItems > keepRange * 2) {
-          distance = Math.min(distance, totalItems - distance);
-      }
+      
+      // Always calculate circular distance for slideshow
+      distance = Math.min(distance, totalItems - distance);
 
       if (distance > keepRange) {
         // Destroy video player if exists
@@ -3399,6 +3471,10 @@ const initArrowNavigation = () => {
   container.appendChild(muteButton);
 
   const showArrows = () => {
+    if (CONFIG.hideArrowsOnMobile && window.matchMedia("only screen and (max-width: 768px)").matches) {
+        return; // disable arrow display on mobile
+    }
+
     leftArrow.style.display = "block";
     rightArrow.style.display = "block";
 
