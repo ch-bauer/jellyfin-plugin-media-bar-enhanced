@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Jellyfin Slideshow by M0RPH3US v4.0.1
  * Modified by CodeDevMLH
  * 
@@ -58,6 +58,15 @@ const CONFIG = {
   enableKeyboardControls: true,
   alwaysShowArrows: false,
   hideArrowsOnMobile: true,
+  enableCustomOverlay: false,
+  customOverlayText: "",
+  customOverlayImageUrl: "",
+  customOverlayStyle: "Shadowed",
+  customOverlayImageStyle: "None",
+  customOverlayPriority: "Image",
+  customOverlayPositionX: 0,
+  customOverlayPositionY: 0,
+  customOverlayScale: 100,
   enableCustomMediaIds: true,
   enableSeasonalContent: false,
   customMediaIds: "",
@@ -3777,6 +3786,102 @@ const slidesInit = async () => {
     return;
   }
   
+  const renderCustomOverlay = () => {
+    let activeOverlayText = CONFIG.customOverlayText;
+    let activeOverlayImage = CONFIG.customOverlayImageUrl;
+    let isSeasonOverride = false;
+
+    if (CONFIG.enableSeasonalContent && CONFIG.seasonalSections) {
+      try {
+        const sections = JSON.parse(CONFIG.seasonalSections || "[]");
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentDay = now.getDate();
+
+        for (const section of sections) {
+          const startMonth = parseInt(section.StartMonth);
+          const startDay = parseInt(section.StartDay);
+          const endMonth = parseInt(section.EndMonth);
+          const endDay = parseInt(section.EndDay);
+
+          let isActive = false;
+          if (startMonth === endMonth) {
+            if (currentMonth === startMonth && currentDay >= startDay && currentDay <= endDay) {
+              isActive = true;
+            }
+          } else if (startMonth < endMonth) {
+            if (currentMonth > startMonth && currentMonth < endMonth) {
+              isActive = true;
+            } else if (currentMonth === startMonth && currentDay >= startDay) {
+              isActive = true;
+            } else if (currentMonth === endMonth && currentDay <= endDay) {
+              isActive = true;
+            }
+          } else { // Wraps around year
+            if (currentMonth > startMonth || currentMonth < endMonth) {
+              isActive = true;
+            } else if (currentMonth === startMonth && currentDay >= startDay) {
+              isActive = true;
+            } else if (currentMonth === endMonth && currentDay <= endDay) {
+              isActive = true;
+            }
+          }
+
+          if (isActive) {
+            if (section.OverlayText || section.OverlayImageUrl) {
+                isSeasonOverride = true;
+                // Season fully overrides global overlay, even if empty
+                activeOverlayImage = section.OverlayImageUrl || null;
+                activeOverlayText = section.OverlayText || null;
+            }
+            break;
+          }
+        }
+      } catch (e) {
+        console.error("🎬 Media Bar:", "Error parsing seasonal sections for overlay:", e);
+      }
+    }
+
+    if (!CONFIG.enableCustomOverlay && !isSeasonOverride) {
+      return; 
+    }
+
+    if (!activeOverlayText && !activeOverlayImage) return;
+
+    const overlayContainer = document.createElement("div");
+    overlayContainer.className = "custom-overlay-container";
+
+    const overlayPriority = CONFIG.customOverlayPriority || "Image";
+    const showImage = activeOverlayImage && (overlayPriority === "Image" || !activeOverlayText);
+    const showText = activeOverlayText && (!showImage);
+
+    if (showImage) {
+      const img = document.createElement("img");
+      const imgStyle = CONFIG.customOverlayImageStyle || "None";
+      img.className = `custom-overlay-image custom-overlay-img-${imgStyle}`;
+      img.src = activeOverlayImage;
+      overlayContainer.appendChild(img);
+    } else if (showText) {
+      const p = document.createElement("p");
+      p.className = `custom-overlay-text custom-overlay-style-${CONFIG.customOverlayStyle || 'Shadowed'}`;
+      p.textContent = activeOverlayText;
+      overlayContainer.appendChild(p);
+    }
+
+    const slidesContainer = document.getElementById("slides-container");
+    if (slidesContainer) {
+      const posX = CONFIG.customOverlayPositionX || 0;
+      const posY = CONFIG.customOverlayPositionY || 0;
+      const scaleValue = (CONFIG.customOverlayScale !== undefined ? CONFIG.customOverlayScale : 100) / 100;
+      
+      overlayContainer.style.setProperty('--overlay-x', `${posX}vw`);
+      overlayContainer.style.setProperty('--overlay-y', `${posY}vh`);
+      overlayContainer.style.setProperty('--overlay-scale', scaleValue);
+
+      slidesContainer.appendChild(overlayContainer);
+    }
+  };
+  
   if (CONFIG.enableClientSideSettings) {
       MediaBarEnhancedSettingsManager.init();
       const isClientSideEnabled = MediaBarEnhancedSettingsManager.getSetting('enabled', true);
@@ -3874,6 +3979,8 @@ const slidesInit = async () => {
     console.log("🎬 Media Bar:", "🌟 Initializing Enhanced Jellyfin Slideshow");
 
     initArrowNavigation();
+
+    renderCustomOverlay();
 
     await SlideshowManager.loadSlideshowData();
 

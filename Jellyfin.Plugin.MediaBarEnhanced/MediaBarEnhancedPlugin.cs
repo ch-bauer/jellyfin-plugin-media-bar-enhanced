@@ -17,7 +17,6 @@ namespace Jellyfin.Plugin.MediaBarEnhanced
     {
         private readonly ScriptInjector _scriptInjector;
         private readonly ILoggerFactory _loggerFactory;
-        public IServiceProvider ServiceProvider { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MediaBarEnhancedPlugin"/> class.

@@ -30,6 +30,10 @@
                         style="background: none; border: none; color: #ccc; cursor: pointer; transition: color 0.3s, border-bottom 0.3s; padding: 0.5em 1em; border-bottom: 2px solid transparent;">
                         <h3>Custom Content</h3>
                     </button>
+                    <button class="jellyfin-tab-button" onclick="showTab('media-bar-enhanced-overlay', this)"
+                        style="background: none; border: none; color: #ccc; cursor: pointer; transition: color 0.3s, border-bottom 0.3s; padding: 0.5em 1em; border-bottom: 2px solid transparent;">
+                        <h3>Custom Overlay</h3>
+                    </button>
                     <button class="jellyfin-tab-button" onclick="showTab('media-bar-enhanced-advanced', this)"
                         style="background: none; border: none; color: #ccc; cursor: pointer; transition: color 0.3s, border-bottom 0.3s; padding: 0.5em 1em; border-bottom: 2px solid transparent;">
                         <h3>Advanced Settings</h3>
@@ -208,6 +212,128 @@
                             </button>
                         </div>
                         <input type="hidden" id="SeasonalSections" name="SeasonalSections" value="[]" />
+                    </div>
+
+                    <!-- CUSTOM OVERLAY TAB -->
+                    <div id="media-bar-enhanced-overlay" class="tab-content" style="display:none;">
+                        <h2 class="sectionTitle">Custom Slideshow Overlay</h2>
+                        <p>Inject a custom text or floating image over the slideshow. This can be overridden by specific Seasonal Sections in the Custom Filters tab.</p>
+                        
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
+                                <input is="emby-checkbox" type="checkbox" id="EnableCustomOverlay" name="EnableCustomOverlay" />
+                                <span>Enable Custom Overlay</span>
+                            </label>
+                            <div class="fieldDescription">If enabled, the text or image below will hover over the slideshow globally.</div>
+                        </div>
+                        
+                        <div class="selectContainer" style="margin-top: 1em;">
+                            <label class="selectLabel" for="CustomOverlayPriority">Priority (If Both Are Set)</label>
+                            <select is="emby-select" id="CustomOverlayPriority" name="CustomOverlayPriority"
+                                class="selectLayout emby-select-withcolor emby-select"
+                                style="width: 100%; -webkit-appearance: menulist; appearance: menulist;">
+                                <option value="Image">Show Image</option>
+                                <option value="Text">Show Text</option>
+                            </select>
+                            <div class="fieldDescription">What should be displayed if you have both an Image and Text configured?</div>
+                        </div>
+                        
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="CustomOverlayText">Global Overlay Text</label>
+                            <input is="emby-input" type="text" id="CustomOverlayText" name="CustomOverlayText" />
+                            <div class="fieldDescription">Text to display on the overlay (e.g. "Movie Night!").</div>
+                        </div>
+
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="CustomOverlayImageUrl">Global Overlay Image URL</label>
+                            <input is="emby-input" type="text" id="CustomOverlayImageUrl" name="CustomOverlayImageUrl" />
+                            <div class="fieldDescription">Absolute URL to an image to display on the overlay.</div>
+                        </div>
+
+                        <!-- Image Upload Dropzone -->
+                        <div class="inputContainer" style="margin-top: 1em;">
+                            <label class="inputLabel">Or Upload Local Image</label>
+                            <div id="overlayImageDropzone" style="border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 2em; text-align: center; cursor: pointer; background: rgba(0,0,0,0.2); transition: all 0.2s ease; position: relative; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <i class="material-icons" style="font-size: 40px; color: rgba(255,255,255,0.4); margin-bottom: 10px;">cloud_upload</i>
+                                <span style="font-size: 1.1em; color: rgba(255,255,255,0.7);">Drag and drop an image here, or click to select</span>
+                                <input type="file" id="overlayImageInput" accept="image/png, image/jpeg, image/gif, image/webp" style="display: none;">
+                                <img id="overlayImagePreview" style="display: none; max-width: 100%; max-height: 150px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 4px; z-index: 2;" />
+                                <!-- A semi-transparent overlay to clear the image -->
+                                <button type="button" id="clearOverlayImageBtn" class="clear-btn" is="paper-icon-button-light" style="display: none; position: absolute; top: 10px; right: 10px; z-index: 3; color: #a94442;" title="Clear Image">
+                                    <i class="material-icons">delete</i>
+                                </button>
+                            </div>
+                            <div class="fieldDescription">Uploading an image will save it to your server and automatically update the URL field above.</div>
+                        </div>
+                        
+                        <h2 class="sectionTitle" style="margin-top: 1.2em;">Styles</h2>
+
+                        <div class="selectContainer">
+                            <label class="selectLabel" for="CustomOverlayStyle">Overlay Style</label>
+                            <select is="emby-select" id="CustomOverlayStyle" name="CustomOverlayStyle"
+                                class="selectLayout emby-select-withcolor emby-select"
+                                style="width: 100%; -webkit-appearance: menulist; appearance: menulist;">
+                                <option value="None">None (Plain White)</option>
+                                <option value="Shadowed">Classic Shadowed</option>
+                                <option value="Frosted">Frosted Glass Pill</option>
+                                <option value="Cinematic">Cinematic Golden Glow</option>
+                                <option value="Pulse">Animated Pulse</option>
+                                <option value="SteadyNeon">Steady Neon</option>
+                                <option value="Neon">Neon Cyberpunk (Glitching)</option>
+                                <option value="Typewriter">Typewriter Pop</option>
+                                <option value="Bubble">Floating Bubble</option>
+                                <option value="SlideIn">Cinematic Slide-In</option>
+                                <option value="Glitch">Cyberpunk Glitch</option>
+                                <option value="RetroPop">Retro Pop 3D</option>
+                                <option value="Shimmer">Glowing Shimmer</option>
+                                <option value="Wave">Liquid Wave</option>
+                                <option value="VHS">VHS Tracking</option>
+                                <option value="Matrix">Digital Matrix</option>
+                                <option value="Ghost">Ghostly Apparition</option>
+                                <option value="PulseGlow">Breathing Pulse Glow</option>
+                            </select>
+                            <div class="fieldDescription">Choose the visual styling animation for your custom text.</div>
+                        </div>
+
+                        <div class="selectContainer">
+                            <label class="selectLabel" for="CustomOverlayImageStyle">Image Style</label>
+                            <select is="emby-select" id="CustomOverlayImageStyle" name="CustomOverlayImageStyle"
+                                class="selectLayout emby-select-withcolor emby-select"
+                                style="width: 100%; -webkit-appearance: menulist; appearance: menulist;">
+                                <option value="None">None (Default)</option>
+                                <option value="RoundedShadow">Rounded & Shadow</option>
+                                <option value="GlowingBorder">Neon Glow</option>
+                                <option value="Polaroid">Polaroid Frame</option>
+                                <option value="Vintage">Vintage Sepia</option>
+                                <option value="Grayscale">Grayscale</option>
+                                <option value="Hologram">Hologram</option>
+                                <option value="CRT">CRT Monitor</option>
+                                <option value="Floating">Floating Float</option>
+                                <option value="VHSTracking">VHS Tracking Glitch</option>
+                                <option value="ColorCycle">Rainbow Color Cycle</option>
+                                <option value="Mirror">Mirror Reflection</option>
+                            </select>
+                            <div class="fieldDescription">Choose a visual effect to apply to your overlay image.</div>
+                        </div>
+
+                        <h3 class="sectionTitle" style="margin-top:2em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5em;">Layout Tweaks</h3>
+                        <div style="display: flex; gap: 1em; flex-wrap: wrap;">
+                            <div class="inputContainer" style="flex: 1; min-width: 150px;">
+                                <label class="inputLabel inputLabelUnfocused" for="CustomOverlayPositionX">X Offset (% vw)</label>
+                                <input is="emby-input" type="number" id="CustomOverlayPositionX" name="CustomOverlayPositionX" min="-50" max="50" step="1" />
+                                <div class="fieldDescription">Horizontal nudge (negative = left, positive = right). Default is 0.</div>
+                            </div>
+                            <div class="inputContainer" style="flex: 1; min-width: 150px;">
+                                <label class="inputLabel inputLabelUnfocused" for="CustomOverlayPositionY">Y Offset (% vh)</label>
+                                <input is="emby-input" type="number" id="CustomOverlayPositionY" name="CustomOverlayPositionY" min="-50" max="50" step="1" />
+                                <div class="fieldDescription">Vertical nudge (negative = up, positive = down). Default is 0.</div>
+                            </div>
+                            <div class="inputContainer" style="flex: 1; min-width: 150px;">
+                                <label class="inputLabel inputLabelUnfocused" for="CustomOverlayScale">Scale (%)</label>
+                                <input is="emby-input" type="number" id="CustomOverlayScale" name="CustomOverlayScale" min="50" max="200" step="1" />
+                                <div class="fieldDescription">Overlay zoom level. Default is 100%.</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- ADVANCED TAB -->
@@ -534,7 +660,10 @@
                             'PreferLocalTrailers', 'ApplyLimitsToCustomIds', 'SeasonalSections',
                             'PreferLocalBackdrops', 'RandomizeThemeVideos', 'RandomizeLocalTrailers',
                             'IncludeWatchedContent', 'ShowPaginationDots', 'MaxParentalRating',
-                            'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile'
+                            'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile',
+                            'EnableCustomOverlay', 'CustomOverlayText', 'CustomOverlayImageUrl',
+                            'CustomOverlayStyle', 'CustomOverlayImageStyle', 'CustomOverlayPriority',
+                            'CustomOverlayPositionX', 'CustomOverlayPositionY', 'CustomOverlayScale'
                         ];
 
                         // Manual mapping for MediaBarIsEnabled -> IsEnabled, to avoid conflicts with other plugins
@@ -614,6 +743,137 @@
                             updatePreferLocalVisibility();
                         }
 
+                        // Overlay Image Upload Logic
+                        var dropzone = page.querySelector('#overlayImageDropzone');
+                        var fileInput = page.querySelector('#overlayImageInput');
+                        var urlInput = page.querySelector('#CustomOverlayImageUrl');
+                        var previewImg = page.querySelector('#overlayImagePreview');
+                        var clearBtn = page.querySelector('#clearOverlayImageBtn');
+
+                        function updatePreview() {
+                            var icon = dropzone.querySelector('i');
+                            var text = dropzone.querySelector('span');
+                            if (urlInput.value && urlInput.value.trim() !== '') {
+                                previewImg.src = urlInput.value;
+                                previewImg.style.display = 'block';
+                                clearBtn.style.display = 'inline-flex';
+                                if(icon) icon.style.display = 'none';
+                                if(text) {
+                                    text.textContent = 'Drag and drop a new image here, or click to select';
+                                    text.style.display = 'block';
+                                    text.style.position = 'absolute';
+                                    text.style.bottom = '10px';
+                                    text.style.zIndex = '3';
+                                    text.style.backgroundColor = 'rgba(0,0,0,0.6)';
+                                    text.style.padding = '4px 8px';
+                                    text.style.borderRadius = '4px';
+                                }
+                            } else {
+                                previewImg.style.display = 'none';
+                                clearBtn.style.display = 'none';
+                                if(icon) icon.style.display = 'block';
+                                if(text) {
+                                    text.textContent = 'Drag and drop an image here, or click to select';
+                                    text.style.display = 'block';
+                                    text.style.position = 'static';
+                                    text.style.backgroundColor = 'transparent';
+                                }
+                            }
+                        }
+
+                        // Initial check
+                        updatePreview();
+
+                        // Listen to manual URL input changes
+                        urlInput.addEventListener('input', updatePreview);
+
+                        clearBtn.addEventListener('click', function(e) {
+                            e.stopPropagation(); // prevent triggering file dialog
+                            
+                            // Call DELETE API to remove global image
+                            fetch(ApiClient.serverAddress() + '/MediaBarEnhanced/OverlayImage', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': 'MediaBrowser Client="' + ApiClient.appName() + '", Device="' + ApiClient.deviceName() + '", DeviceId="' + ApiClient.deviceId() + '", Version="' + ApiClient.appVersion() + '", Token="' + ApiClient.accessToken() + '"'
+                                }
+                            }).catch(console.error);
+
+                            urlInput.value = '';
+                            fileInput.value = '';
+                            updatePreview();
+                        });
+
+                        dropzone.addEventListener('click', function() {
+                            fileInput.click();
+                        });
+
+                        dropzone.addEventListener('dragover', function(e) {
+                            e.preventDefault();
+                            dropzone.style.borderColor = '#00a4dc';
+                            dropzone.style.background = 'rgba(0, 164, 220, 0.2)';
+                        });
+
+                        dropzone.addEventListener('dragleave', function(e) {
+                            e.preventDefault();
+                            dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+                            dropzone.style.background = 'rgba(0,0,0,0.2)';
+                        });
+
+                        dropzone.addEventListener('drop', function(e) {
+                            e.preventDefault();
+                            dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+                            dropzone.style.background = 'rgba(0,0,0,0.2)';
+                            
+                            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                fileInput.files = e.dataTransfer.files;
+                                uploadImage(e.dataTransfer.files[0]);
+                            }
+                        });
+
+                        fileInput.addEventListener('change', function() {
+                            if (this.files && this.files.length > 0) {
+                                uploadImage(this.files[0]);
+                            }
+                        });
+
+                        function uploadImage(file) {
+                            // Validate it's an image
+                            if (!file.type.match('image.*')) {
+                                Dashboard.alert('Please select a valid image file.');
+                                return;
+                            }
+
+                            Dashboard.showLoadingMsg();
+                            
+                            var formData = new FormData();
+                            formData.append('file', file);
+
+                            // The Endpoint we created in C#
+                            fetch(ApiClient.serverAddress() + '/MediaBarEnhanced/OverlayImage', {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'Authorization': 'MediaBrowser Client="' + ApiClient.appName() + '", Device="' + ApiClient.deviceName() + '", DeviceId="' + ApiClient.deviceId() + '", Version="' + ApiClient.appVersion() + '", Token="' + ApiClient.accessToken() + '"'
+                                }
+                            })
+                            .then(response => {
+                                if (response.ok) return response.json();
+                                throw new Error('Network response was not ok.');
+                            })
+                            .then(data => {
+                                // Update URL input
+                                urlInput.value = ApiClient.serverAddress() + data.url;
+                                updatePreview();
+                                Dashboard.hideLoadingMsg();
+                            })
+                            .catch(error => {
+                                console.error('Upload error:', error);
+                                Dashboard.alert('Image upload failed. Please verify API controller is active.');
+                                Dashboard.hideLoadingMsg();
+                            });
+                        }
+
+
                         Dashboard.hideLoadingMsg();
                     });
                 },
@@ -645,7 +905,10 @@
                         'PreferLocalTrailers', 'ApplyLimitsToCustomIds', 'SeasonalSections',
                         'PreferLocalBackdrops', 'RandomizeThemeVideos', 'RandomizeLocalTrailers',
                         'IncludeWatchedContent', 'ShowPaginationDots', 'MaxParentalRating',
-                        'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile'
+                        'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile',
+                        'EnableCustomOverlay', 'CustomOverlayText', 'CustomOverlayImageUrl',
+                        'CustomOverlayStyle', 'CustomOverlayImageStyle', 'CustomOverlayPriority',
+                        'CustomOverlayPositionX', 'CustomOverlayPositionY', 'CustomOverlayScale'
                     ];
 
                     keys.forEach(function (key) {
@@ -680,8 +943,10 @@
                     MediaBarEnhancedConfigurationPage.createSectionElement(container, {
                         Name: 'New Season',
                         StartDay: 1, StartMonth: 1,
-                        EndDay: 1, EndMonth: 1,
-                        MediaIds: ''
+                        EndDay: 31, EndMonth: 1,
+                        MediaIds: '',
+                        OverlayText: '',
+                        OverlayImageUrl: ''
                     }, index);
                 },
 
@@ -742,6 +1007,28 @@
                         '    <label class="inputLabel" style="margin-bottom:0.5em; display:block;">Media IDs</label>' +
                         '    <textarea is="emby-textarea" class="emby-textarea section-ids" style="width: 100%; height: 80px; font-family: monospace;">' + (data.MediaIds || '') + '</textarea>' +
                         '    <div class="fieldDescription">Comma-separated or Newline separated list of Movie/Series/Collection IDs to show during this season.<br>Same options available as for the default media IDs.</div>' +
+                        '</div>' + 
+                        '<h3 class="inputLabel" style="margin-top: 1.5em; margin-bottom: 0.5em;">Custom Overlay Overrides</h3>' +
+                        '<div style="display: flex; flex-wrap: wrap; gap: 1em; align-items: flex-start;">' +
+                        '    <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 0.5em;">' +
+                        '        <div class="inputContainer" style="margin: 0;">' +
+                        '            <input is="emby-input" type="text" class="emby-input section-overlay-text" style="width: 100%;" value="' + (data.OverlayText ? data.OverlayText.replace(/"/g, '&quot;') : '') + '" placeholder="Seasonal Custom Overlay Text (e.g. Oscars Time!)" />' +
+                        '            <div class="fieldDescription">Override the global text.</div>' +
+                        '        </div>' + 
+                        '        <div class="inputContainer" style="margin: 0;">' +
+                        '            <input is="emby-input" type="text" class="emby-input section-overlay-image" style="width: 100%;" value="' + (data.OverlayImageUrl ? data.OverlayImageUrl.replace(/"/g, '&quot;') : '') + '" placeholder="Seasonal Custom Overlay Image URL" />' +
+                        '            <div class="fieldDescription">Override the global image URL.</div>' +
+                        '        </div>' +
+                        '    </div>' +
+                        '    <div class="inputContainer" style="flex: 1; min-width: 250px; margin: 0; padding-bottom: 5px;">' +
+                        '        <div class="seasonal-dropzone" style="border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 1em; text-align: center; cursor: pointer; background: rgba(0,0,0,0.2); transition: all 0.2s ease; position: relative; min-height: 98px; display: flex; flex-direction: column; align-items: center; justify-content: center;">' +
+                        '            <i class="material-icons" style="font-size: 24px; color: rgba(255,255,255,0.4); margin-bottom: 4px;">cloud_upload</i>' +
+                        '            <span style="font-size: 0.85em; color: rgba(255,255,255,0.7);">Upload seasonal image</span>' +
+                        '            <input type="file" class="seasonal-file-input" accept="image/png, image/jpeg, image/gif, image/webp" style="display: none;">' +
+                        '            <img class="seasonal-preview-img" style="display: none; max-width: 100%; max-height: 100%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 4px; z-index: 2; object-fit: contain;" />' +
+                        '            <button type="button" is="paper-icon-button-light" class="seasonal-clear-btn remove-img" title="Clear Image" style="background: transparent; border: none; padding: 0; cursor: pointer; display: none; position: absolute; top: 10px; right: 10px; z-index: 3; color: #a94442;"><i class="material-icons">delete</i></button>' +
+                        '        </div>' +
+                        '    </div>' +
                         '</div>';
 
                     div.querySelector('.btn-remove').addEventListener('click', function () {
@@ -762,6 +1049,185 @@
                             MediaBarEnhancedConfigurationPage.updateSectionTitles(container);
                         }
                     });
+
+                    // --- Seasonal Drag and Drop Logic ---
+                    var sectionNameInput = div.querySelector('.section-name');
+                    var urlInput = div.querySelector('.section-overlay-image');
+                    var dropzone = div.querySelector('.seasonal-dropzone');
+                    var fileInput = div.querySelector('.seasonal-file-input');
+                    var previewImg = div.querySelector('.seasonal-preview-img');
+                    var clearBtn = div.querySelector('.seasonal-clear-btn');
+                    var currentSectionName = sectionNameInput.value.trim();
+
+                    // Track Name Changes to rename server file
+                    sectionNameInput.addEventListener('focus', function() {
+                        currentSectionName = this.value.trim();
+                    });
+
+                    sectionNameInput.addEventListener('blur', function() {
+                        var newName = this.value.trim();
+                        if (newName && currentSectionName && newName !== currentSectionName) {
+                            // If they have an image attached, rename it
+                            if (urlInput.value && urlInput.value.indexOf('OverlayImage') !== -1) {
+                                fetch(ApiClient.serverAddress() + '/MediaBarEnhanced/OverlayImage/Rename?oldName=' + encodeURIComponent(currentSectionName) + '&newName=' + encodeURIComponent(newName), {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Authorization': 'MediaBrowser Client="' + ApiClient.appName() + '", Device="' + ApiClient.deviceName() + '", DeviceId="' + ApiClient.deviceId() + '", Version="' + ApiClient.appVersion() + '", Token="' + ApiClient.accessToken() + '"'
+                                    }
+                                })
+                                .then(response => {
+                                    if(response.ok) return response.json();
+                                    throw new Error('Rename failed');
+                                })
+                                .then(data => {
+                                    urlInput.value = ApiClient.serverAddress() + data.url;
+                                    currentSectionName = newName;
+                                }).catch(console.error);
+                            } else {
+                                currentSectionName = newName;
+                            }
+                        } else {
+                            currentSectionName = newName;
+                        }
+                    });
+
+                    function updatePreview() {
+                        var icon = dropzone.querySelector('i');
+                        var text = dropzone.querySelector('span');
+                        var val = urlInput.value.trim();
+                        if (val) {
+                            previewImg.src = val;
+                            previewImg.style.display = 'block';
+                            clearBtn.style.display = 'inline-flex';
+                            if(icon) icon.style.display = 'none';
+                            if(text) {
+                                text.textContent = 'Drag and drop a new image here, or click to select';
+                                text.style.display = 'block';
+                                text.style.position = 'absolute';
+                                text.style.bottom = '5px';
+                                text.style.zIndex = '3';
+                                text.style.backgroundColor = 'rgba(0,0,0,0.6)';
+                                text.style.padding = '2px 6px';
+                                text.style.borderRadius = '4px';
+                                text.style.fontSize = '0.7em';
+                            }
+                        } else {
+                            previewImg.src = '';
+                            previewImg.style.display = 'none';
+                            clearBtn.style.display = 'none';
+                            if(icon) icon.style.display = 'block';
+                            if(text) {
+                                text.textContent = 'Upload seasonal overlay image';
+                                text.style.display = 'block';
+                                text.style.position = 'static';
+                                text.style.backgroundColor = 'transparent';
+                                text.style.fontSize = '0.85em';
+                            }
+                        }
+                    }
+
+                    // Initial state
+                    updatePreview();
+                    urlInput.addEventListener('input', updatePreview);
+
+                    clearBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var name = sectionNameInput.value.trim();
+                        if (name) {
+                            fetch(ApiClient.serverAddress() + '/MediaBarEnhanced/OverlayImage?filename=' + encodeURIComponent(name), {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': 'MediaBrowser Client="' + ApiClient.appName() + '", Device="' + ApiClient.deviceName() + '", DeviceId="' + ApiClient.deviceId() + '", Version="' + ApiClient.appVersion() + '", Token="' + ApiClient.accessToken() + '"'
+                                }
+                            }).catch(console.error);
+                        }
+                        urlInput.value = '';
+                        fileInput.value = '';
+                        updatePreview();
+                    });
+
+                    div.querySelector('.btn-remove').addEventListener('click', function () {
+                        // Cleanup image if deleted
+                        var name = sectionNameInput.value.trim();
+                        if (name) {
+                            fetch(ApiClient.serverAddress() + '/MediaBarEnhanced/OverlayImage?filename=' + encodeURIComponent(name), {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': 'MediaBrowser Client="' + ApiClient.appName() + '", Device="' + ApiClient.deviceName() + '", DeviceId="' + ApiClient.deviceId() + '", Version="' + ApiClient.appVersion() + '", Token="' + ApiClient.accessToken() + '"'
+                                }
+                            }).catch(console.error);
+                        }
+                        div.remove();
+                        MediaBarEnhancedConfigurationPage.updateSectionTitles(container);
+                    });
+
+                    dropzone.addEventListener('click', function() { fileInput.click(); });
+                    
+                    dropzone.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        dropzone.style.borderColor = '#00a4dc';
+                        dropzone.style.background = 'rgba(0, 164, 220, 0.2)';
+                    });
+
+                    dropzone.addEventListener('dragleave', function(e) {
+                        e.preventDefault();
+                        dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+                        dropzone.style.background = 'rgba(0,0,0,0.2)';
+                    });
+
+                    dropzone.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+                        dropzone.style.background = 'rgba(0,0,0,0.2)';
+                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                            fileInput.files = e.dataTransfer.files;
+                            uploadSeasonalImage(e.dataTransfer.files[0]);
+                        }
+                    });
+
+                    fileInput.addEventListener('change', function() {
+                        if (this.files && this.files.length > 0) uploadSeasonalImage(this.files[0]);
+                    });
+
+                    function uploadSeasonalImage(file) {
+                        if (!file.type.match('image.*')) {
+                            Dashboard.alert('Please select a valid image file.');
+                            return;
+                        }
+
+                        var name = sectionNameInput.value.trim();
+                        if (!name) {
+                            Dashboard.alert('Please enter a Name for this season before uploading an image (used for file saving).');
+                            return;
+                        }
+
+                        Dashboard.showLoadingMsg();
+                        var formData = new FormData();
+                        formData.append('file', file);
+
+                        var qs = '?filename=' + encodeURIComponent(name);
+                        fetch(ApiClient.serverAddress() + '/MediaBarEnhanced/OverlayImage' + qs, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'Authorization': 'MediaBrowser Client="' + ApiClient.appName() + '", Device="' + ApiClient.deviceName() + '", DeviceId="' + ApiClient.deviceId() + '", Version="' + ApiClient.appVersion() + '", Token="' + ApiClient.accessToken() + '"'
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) return response.json();
+                            throw new Error('Upload failed');
+                        })
+                        .then(data => {
+                            urlInput.value = ApiClient.serverAddress() + data.url;
+                            updatePreview();
+                            Dashboard.hideLoadingMsg();
+                        })
+                        .catch(error => {
+                            console.error('Upload error:', error);
+                            Dashboard.alert('Image upload failed.');
+                            Dashboard.hideLoadingMsg();
+                        });
+                    }
 
                     container.appendChild(div);
                 },
@@ -786,7 +1252,9 @@
                             StartMonth: parseInt(el.querySelector('.start-month').value),
                             EndDay: parseInt(el.querySelector('.end-day').value),
                             EndMonth: parseInt(el.querySelector('.end-month').value),
-                            MediaIds: el.querySelector('.section-ids').value
+                            MediaIds: el.querySelector('.section-ids').value,
+                            OverlayText: el.querySelector('.section-overlay-text').value,
+                            OverlayImageUrl: el.querySelector('.section-overlay-image').value
                         });
                     });
                     return sections;

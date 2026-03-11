@@ -49,5 +49,16 @@ namespace Jellyfin.Plugin.MediaBarEnhanced.Configuration
         public bool IncludeWatchedContent { get; set; } = false;
         public string SortBy { get; set; } = "Random";
         public string SortOrder { get; set; } = "Ascending";
+        
+        public bool EnableCustomOverlay { get; set; } = false;
+        public string CustomOverlayText { get; set; } = "";
+        public string CustomOverlayImageUrl { get; set; } = "";
+        public string CustomOverlayStyle { get; set; } = "Shadowed";
+        public string CustomOverlayImageStyle { get; set; } = "None";
+        public string CustomOverlayPriority { get; set; } = "Image";
+        
+        public int CustomOverlayPositionX { get; set; } = 0;
+        public int CustomOverlayPositionY { get; set; } = 0;
+        public int CustomOverlayScale { get; set; } = 100;
     }
 }
