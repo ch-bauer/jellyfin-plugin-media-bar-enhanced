@@ -44,18 +44,6 @@ namespace Jellyfin.Plugin.MediaBarEnhanced.Api
 
             var stream = assembly.GetManifestResourceStream(resourceName);
 
-            // if (stream == null)
-            // {   
-            //     // Try fallback/debug matching
-            //     var allNames = assembly.GetManifestResourceNames();
-            //     var match = Array.Find(allNames, n => n.EndsWith(resourcePath, StringComparison.OrdinalIgnoreCase));
-
-            //     if (match != null)
-            //     {
-            //         stream = assembly.GetManifestResourceStream(match);
-            //     }
-            // }
-
             if (stream == null)
             {
                 return NotFound($"Resource not found: {resourceName}");
