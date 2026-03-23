@@ -340,6 +340,15 @@ const initLoadingScreen = () => {
       });
     });
   };
+
+  // Global Failsafe, force remove loading screen after 15 seconds to prevent infinite lockouts
+  setTimeout(() => {
+    const loader = document.querySelector(".bar-loading");
+    if (loader) {
+      console.warn("🎬 Media Bar:", "Loading screen timed out! Forcing removal as a failsafe.");
+      finishLoading();
+    }
+  }, 15000);
 };
 
 /**
@@ -3892,8 +3901,16 @@ const slidesInit = async () => {
             homeSections.style.top = '0';
             homeSections.style.marginTop = '0';
           }
-          const container = document.getElementById('slides-container');
-          if (container) container.style.display = 'none';
+          let container = document.getElementById('slides-container');
+          if (container) {
+            container.style.display = 'none';
+          } else {
+            // Create dummy container so loading screen's interval can trigger its own cleanup
+            container = document.createElement('div');
+            container.id = 'slides-container';
+            container.style.display = 'none';
+            document.body.appendChild(container);
+          }
           
           return;
       }
