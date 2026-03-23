@@ -2372,8 +2372,17 @@ const SlideshowManager = {
 
     const totalItems = STATE.slideshow.totalItems || 0;
 
+    // dynamically lower the max dots threshold on small screens 
+    let effectiveMaxDots = CONFIG.maxPaginationDots;
+    if (window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches) {
+      const availableWidth = window.innerWidth * 0.9;
+      const dotWidth = 18; // approximate width per dot
+      const fittingDots = Math.floor(availableWidth / dotWidth) - 1;
+      effectiveMaxDots = Math.min(effectiveMaxDots, fittingDots);
+    }
+
     // Switch to counter style if too many items
-    if (totalItems > CONFIG.maxPaginationDots) {
+    if (totalItems > effectiveMaxDots) {
       const counter = document.createElement("span");
       counter.className = "slide-counter";
       counter.id = "slide-counter";
