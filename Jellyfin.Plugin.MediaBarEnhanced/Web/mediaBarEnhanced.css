@@ -749,6 +749,15 @@
     left: 50%;
     transform: translateX(-50%) scale(0.8);
     background-color: #ffffff00;
+    width: max-content;
+    max-width: 90vw;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    padding: 10px 0;
+  }
+
+  .dot {
+    flex-shrink: 0;
   }
 
   .dot.active {
