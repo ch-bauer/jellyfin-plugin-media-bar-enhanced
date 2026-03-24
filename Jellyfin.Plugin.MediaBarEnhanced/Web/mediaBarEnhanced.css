@@ -489,6 +489,15 @@
   overflow: hidden;
 }
 
+.plot-container.constrained-plot {
+  width: 40%;
+}
+
+.plot-container.constrained-plot .plot {
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+}
+
 .genre {
   display: flex;
   gap: 5px;

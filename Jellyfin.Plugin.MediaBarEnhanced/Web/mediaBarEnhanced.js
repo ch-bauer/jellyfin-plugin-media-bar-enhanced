@@ -67,6 +67,7 @@ const CONFIG = {
   customOverlayPositionX: 0,
   customOverlayPositionY: 0,
   customOverlayScale: 100,
+  constrainPlotWidth: false,
   enableCustomMediaIds: true,
   enableSeasonalContent: false,
   customMediaIds: "",
@@ -2055,7 +2056,7 @@ const SlideCreator = {
     SlideUtils.truncateText(plotElement, CONFIG.maxPlotLength);
 
     const plotContainer = SlideUtils.createElement("div", {
-      className: "plot-container",
+      className: "plot-container" + (CONFIG.constrainPlotWidth ? " constrained-plot" : ""),
     });
     plotContainer.appendChild(plotElement);
 
@@ -2575,17 +2576,17 @@ const SlideshowManager = {
               player.setVolume(40);
             }
 
-            // Check if playback successfully started, otherwise fallback to muted
-            setTimeout(() => {
-              if (!currentSlide.classList.contains('active')) return;
-              if (player.getPlayerState &&
-                player.getPlayerState() !== YT.PlayerState.PLAYING &&
-                player.getPlayerState() !== YT.PlayerState.BUFFERING) {
+                // Check if playback successfully started, otherwise fallback to muted
+                setTimeout(() => {
+                  if (!currentSlide.classList.contains('active')) return;
+                  if (player.getPlayerState &&
+                    player.getPlayerState() !== YT.PlayerState.PLAYING &&
+                    player.getPlayerState() !== YT.PlayerState.BUFFERING) {
                 console.log("🎬 Media Bar:", "YouTube loadVideoById didn't start playback, retrying muted...");
-                player.mute();
-                player.playVideo();
-              }
-            }, 1000);
+                    player.mute();
+                    player.playVideo();
+                  }
+                }, 1000);
           } else if (player && typeof player.seekTo === 'function') {
             // Fallback if loadVideoById is not available or videoId missing
             const startTime = player._startTime || 0;
