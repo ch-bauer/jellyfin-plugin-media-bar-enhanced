@@ -67,6 +67,7 @@ const CONFIG = {
   customOverlayPositionX: 0,
   customOverlayPositionY: 0,
   customOverlayScale: 100,
+  backdropVideoDelay: 0,
   constrainPlotWidth: false,
   enableCustomMediaIds: true,
   enableSeasonalContent: false,
@@ -111,6 +112,7 @@ const STATE = {
     customTrailerUrls: {},
     ytPromise: null,
     autoplayTimeouts: [],
+    playSignals: {},
   },
 };
 
@@ -397,6 +399,7 @@ const resetSlideshowState = () => {
   STATE.slideshow.customTrailerUrls = {};
   STATE.slideshow.totalItems = 0;
   STATE.slideshow.isLoading = false;
+  STATE.slideshow.playSignals = {};
 };
 
 /**
@@ -1803,7 +1806,7 @@ const SlideCreator = {
         // Create an iframe upfront
         const ytPlayerIframe = SlideUtils.createElement("iframe", {
           id: `youtube-player-${itemId}`,
-          src: `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`,
+          src: `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&autoplay=0&controls=0&playsinline=1&mute=${STATE.slideshow.isMuted ? 1 : 0}&origin=${encodeURIComponent(window.location.origin)}`,
           style: "width: 100%; height: 100%; border: none;",
           allow: "autoplay; encrypted-media",
           referrerpolicy: "strict-origin-when-cross-origin",
@@ -1878,11 +1881,11 @@ const SlideCreator = {
                     event.target.setPlaybackQuality(quality);
                   }
 
-                  // Only play if this is the active slide
+                  // Only play if this is the active slide and the play signal has been issued (delay finished)
                   const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
                   const isVideoPlayerOpen = document.querySelector('.videoPlayerContainer') || document.querySelector('.youtubePlayerContainer');
 
-                  if (slide && slide.classList.contains('active') && !document.hidden && (!isVideoPlayerOpen || isVideoPlayerOpen.classList.contains('hide'))) {
+                  if (slide && slide.classList.contains('active') && STATE.slideshow.playSignals[itemId] === true && !document.hidden && (!isVideoPlayerOpen || isVideoPlayerOpen.classList.contains('hide'))) {
                     event.target.playVideo();
                     
                     // Check if it actually started playing after a short delay (handling autoplay blocks)
@@ -1915,8 +1918,14 @@ const SlideCreator = {
                   }
                 },
                 'onStateChange': (event) => {
-                  // Fade in when playing
                   if (event.data === YT.PlayerState.PLAYING) {
+                      const slide = document.querySelector(`.slide[data-item-id="${itemId}"]`);
+                      if (slide && STATE.slideshow.playSignals[itemId] === false) {
+                          event.target.pauseVideo();
+                          return;
+                      }
+                      
+                      // Fade in when legitimately playing
                       if (event.target._wrapperDiv) {
                           event.target._wrapperDiv.style.opacity = "1";
                       }
@@ -1968,6 +1977,11 @@ const SlideCreator = {
             console.log("🎬 Media Bar:", `Local video ${itemId} started playing but slide is not active, pausing.`);
             event.target.pause();
             event.target.currentTime = 0;
+            return;
+          }
+          
+          if (STATE.slideshow.playSignals[itemId] === false) {
+            event.target.pause();
             return;
           }
           
@@ -2444,6 +2458,11 @@ const SlideshowManager = {
 
     STATE.slideshow.isTransitioning = true;
 
+    if (STATE.slideshow.backdropVideoTimeout) {
+      clearTimeout(STATE.slideshow.backdropVideoTimeout);
+      STATE.slideshow.backdropVideoTimeout = null;
+    }
+
     let previousVisibleSlide;
     try {
       const container = SlideUtils.getOrCreateSlidesContainer();
@@ -2475,6 +2494,7 @@ const SlideshowManager = {
 
       void currentSlide.offsetWidth;
       currentSlide.classList.add("active");
+      STATE.slideshow.playSignals[currentItemId] = false;
 
       // Manage Video Playback: Stop others, Play current
       // 1. Stop all other YouTube players and local video elements, release connections
@@ -2535,11 +2555,13 @@ const SlideshowManager = {
       }
 
       if (videoBackdrop) {
+        // preload logic
         if (videoBackdrop.tagName === 'VIDEO') {
           // Restore src from data-src if it was deactivated to release connections
           const lazySrc = videoBackdrop.getAttribute('data-src');
           if (lazySrc && !videoBackdrop.src) {
             videoBackdrop.src = lazySrc;
+            videoBackdrop.load(); // Force pre-buffering
           }
 
           videoBackdrop.currentTime = 0;
@@ -2548,22 +2570,11 @@ const SlideshowManager = {
           if (!STATE.slideshow.isMuted) {
             videoBackdrop.volume = 0.4;
           }
-
-          videoBackdrop.play().catch(e => {
-            // Check if it actually started playing after a short delay (handling autoplay blocks)
-            setTimeout(() => {
-              if (videoBackdrop.paused && currentSlide.classList.contains('active')) {
-                console.warn("🎬 Media Bar:", `Autoplay blocked for ${currentItemId}, attempting muted fallback`);
-                videoBackdrop.muted = true;
-                videoBackdrop.play().catch(err => console.error("🎬 Media Bar:", "Muted fallback failed", err));
-              }
-            }, 1000);
-          });
         } else if (STATE.slideshow.videoPlayers && STATE.slideshow.videoPlayers[currentItemId]) {
           const player = STATE.slideshow.videoPlayers[currentItemId];
-          if (player && typeof player.loadVideoById === 'function' && player._videoId) {
-            // Use loadVideoById to enforce start and end times
-            player.loadVideoById({
+          if (player && typeof player.cueVideoById === 'function' && player._videoId) {
+            // Use cueVideoById to buffer video without auto-playing it
+            player.cueVideoById({
               videoId: player._videoId,
               startSeconds: player._startTime || 0,
               endSeconds: player._endTime
@@ -2575,24 +2586,59 @@ const SlideshowManager = {
               player.unMute();
               player.setVolume(40);
             }
+          } else if (player && typeof player.seekTo === 'function') {
+            const startTime = player._startTime || 0;
+            player.seekTo(startTime);
+          }
+        }
 
+        // play logic
+        const playVideoLogic = () => {
+          if (!currentSlide.classList.contains('active')) return;
+          
+          STATE.slideshow.playSignals[currentItemId] = true;
+
+          if (videoBackdrop.tagName === 'VIDEO') {
+            videoBackdrop.play().catch(e => {
+              if (!STATE.slideshow.isMuted) {
+                // Check if it actually started playing after a short delay (handling autoplay blocks)
+                setTimeout(() => {
+                  if (videoBackdrop.paused && currentSlide.classList.contains('active')) {
+                    console.warn("🎬 Media Bar:", `Autoplay blocked for ${currentItemId}, attempting muted fallback`);
+                    videoBackdrop.muted = true;
+                    videoBackdrop.play().catch(err => console.error("🎬 Media Bar:", "Muted fallback failed", err));
+                  }
+                }, 1000);
+              } else {
+                console.error("🎬 Media Bar:", "Playback failed despite being muted", e);
+              }
+            });
+          } else if (STATE.slideshow.videoPlayers && STATE.slideshow.videoPlayers[currentItemId]) {
+            const player = STATE.slideshow.videoPlayers[currentItemId];
+            if (player && typeof player.playVideo === 'function') {
+              player.playVideo();
+
+              if (!STATE.slideshow.isMuted) {
                 // Check if playback successfully started, otherwise fallback to muted
                 setTimeout(() => {
                   if (!currentSlide.classList.contains('active')) return;
                   if (player.getPlayerState &&
                     player.getPlayerState() !== YT.PlayerState.PLAYING &&
                     player.getPlayerState() !== YT.PlayerState.BUFFERING) {
-                console.log("🎬 Media Bar:", "YouTube loadVideoById didn't start playback, retrying muted...");
+                    console.log("🎬 Media Bar:", "YouTube didn't start playback, retrying muted...");
                     player.mute();
                     player.playVideo();
                   }
                 }, 1000);
-          } else if (player && typeof player.seekTo === 'function') {
-            // Fallback if loadVideoById is not available or videoId missing
-            const startTime = player._startTime || 0;
-            player.seekTo(startTime);
-            player.playVideo();
+              }
+            }
           }
+        };
+
+        if (CONFIG.backdropVideoDelay > 0) {
+          STATE.slideshow.backdropVideoTimeout = setTimeout(playVideoLogic, CONFIG.backdropVideoDelay);
+        } else {
+          playVideoLogic();
         }
       }
 

@@ -420,6 +420,13 @@
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label>
+                                <input is="emby-checkbox" type="checkbox" id="ConstrainPlotWidth" name="ConstrainPlotWidth" />
+                                <span>Constrain Plot Width</span>
+                            </label>
+                            <div class="fieldDescription">Align the description text left to match the logo width, preventing it from crossing the entire screen. (Increases the text limit to 3 lines instead of 2).</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
                                 <input is="emby-checkbox" type="checkbox" id="EnableLoadingScreen"
                                     name="EnableLoadingScreen" />
                                 <span>Enable Loading Screen</span>
@@ -462,6 +469,11 @@
                                 (ms)</label>
                             <input is="emby-input" type="number" id="ShuffleInterval" name="ShuffleInterval" />
                             <div class="fieldDescription">Time in milliseconds between changing slides.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="BackdropVideoDelay">Backdrop Video Delay (ms)</label>
+                            <input is="emby-input" type="number" id="BackdropVideoDelay" name="BackdropVideoDelay" />
+                            <div class="fieldDescription">Time in milliseconds to wait before playing backdrops/theme videos (leaves static backdrop visible longer).</div>
                         </div>
 
                         <div class="inputContainer">
@@ -594,10 +606,10 @@
                                 enable counter style directly.</div>
                         </div>
                         <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused" for="MaxPlotLength">Max Plot
-                                Length</label>
+                            <label class="inputLabel inputLabelUnfocused" for="MaxPlotLength">Max Plot Length</label>
                             <input is="emby-input" type="number" id="MaxPlotLength" name="MaxPlotLength" />
-                            <div class="fieldDescription">Maximum characters for the plot summary.</div>
+                            <div class="fieldDescription">Maximum characters for the plot summary. Limited to max 2 lines
+                                (or 3 if 'Constrain Plot Width' is enabled).</div>
                         </div>
                     </div>
 
@@ -663,7 +675,8 @@
                             'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile',
                             'EnableCustomOverlay', 'CustomOverlayText', 'CustomOverlayImageUrl',
                             'CustomOverlayStyle', 'CustomOverlayImageStyle', 'CustomOverlayPriority',
-                            'CustomOverlayPositionX', 'CustomOverlayPositionY', 'CustomOverlayScale'
+                            'CustomOverlayPositionX', 'CustomOverlayPositionY', 'CustomOverlayScale',
+                            'BackdropVideoDelay', 'ConstrainPlotWidth'
                         ];
 
                         // Manual mapping for MediaBarIsEnabled -> IsEnabled, to avoid conflicts with other plugins
@@ -908,7 +921,8 @@
                         'MaxDaysRecent', 'ExcludeSeasonalContent', 'HideArrowsOnMobile',
                         'EnableCustomOverlay', 'CustomOverlayText', 'CustomOverlayImageUrl',
                         'CustomOverlayStyle', 'CustomOverlayImageStyle', 'CustomOverlayPriority',
-                        'CustomOverlayPositionX', 'CustomOverlayPositionY', 'CustomOverlayScale'
+                        'CustomOverlayPositionX', 'CustomOverlayPositionY', 'CustomOverlayScale',
+                        'BackdropVideoDelay', 'ConstrainPlotWidth'
                     ];
 
                     keys.forEach(function (key) {
