@@ -13,8 +13,8 @@
         "changelog": "- fix pagination dot issue on mobile when showing more than ~10 dots (should now dynamically adjust the max dots threshold based on screen size)\n- add loading screen add failsafe logic\n- add option to delay trailer playback\n- add option to limit the plot width",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.9.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
-        "checksum": "",
-        "timestamp": ""
+        "checksum": "d92439ecfd5b7ce4a54169d8f07b6275",
+        "timestamp": "2026-03-24T01:29:16Z"
       },
       {
         "version": "1.8.0.0",
