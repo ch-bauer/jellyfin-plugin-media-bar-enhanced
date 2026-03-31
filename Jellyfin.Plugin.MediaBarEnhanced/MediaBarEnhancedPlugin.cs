@@ -58,7 +58,7 @@ namespace Jellyfin.Plugin.MediaBarEnhanced
         }
 
         /// <inheritdoc />
-        public override string Name => "Media Bar Enhanced";
+        public override string Name => "Enhanced Mediar Bar Enhanced";
 
         /// <inheritdoc />
         public override Guid Id => Guid.Parse("d7e11d57-819b-4bdd-a88d-53c5f5560225");
