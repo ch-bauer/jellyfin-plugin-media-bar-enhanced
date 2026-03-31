@@ -6,21 +6,21 @@
     "overview": "Transforms your Jellyfin home screen with an immersive, fully configurable media slideshow featuring video backdrops.",
     "owner": "CodeDevMLH",
     "category": "General",
-    "imageUrl": "https://raw.githubusercontent.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/refs/heads/main/logo.png",
+    "imageUrl": "https://raw.githubusercontent.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/refs/heads/main/logo.png",
     "versions": [
       {
-        "version": "1.9.1.0",
-        "changelog": "- add language/subtitle tag badges in slide metadata\n- include Tags in item detail fetch fields\n- bump plugin version to 1.9.1.0",
+        "version": "1.9.0.0",
+        "changelog": "- fix pagination dot issue on mobile when showing more than ~10 dots (should now dynamically adjust the max dots threshold based on screen size)\n- add loading screen add failsafe logic\n- add option to delay trailer playback\n- add option to limit the plot width",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.9.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.9.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "d92439ecfd5b7ce4a54169d8f07b6275",
-        "timestamp": "2026-03-31T00:00:00Z"
+        "timestamp": "2026-03-24T01:29:16Z"
       },
       {
         "version": "1.8.0.0",
         "changelog": "- feat: add custom text/image overlay option\n- feat: add option to disable pagination dots/counter\n- feat: add exclude seasonal content from random fetching option\n- Add hide arrows on mobile option \n- fix button issue on mobile when using ElegantFin Theme",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.8.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.8.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "4e4c1aa15d03e25e4900294fa7a62974",
         "timestamp": "2026-03-11T01:41:03Z"
       },
@@ -28,7 +28,7 @@
         "version": "1.7.0.0",
         "changelog": "- Switched to YouTube no-cookie host and referrer policy for iframe security\n- fix playback issues on iOS/MacOS \n- Disable animations and backdrop filters for TV layout\n- removed list.txt functionality to clean up, use the web ui instead\n- Enhance logging with contextual messages, in order to be able to clearly assign logs to this plugin",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.7.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.7.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "8f5c6537ce427db6d0bca8df383e9ceb",
         "timestamp": "2026-03-06T03:35:31Z"
       },
@@ -36,7 +36,7 @@
         "version": "1.6.6.0",
         "changelog": "- feat: add static backdrop also for video backdrops\n- fix: renaming issue of settings (avoiding conflict with other plugins)",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.6.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.6.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "d8f30797ce246212d1ebdd6ffd4aa3ff",
         "timestamp": "2026-02-19T18:03:48Z"
       },
@@ -44,7 +44,7 @@
         "version": "1.6.5.0",
         "changelog": "- refactored seasonal UI settings\n- fix local trailer/backdrop issue that could potentially cause Jellyfin WebSockets to be 'crowded out'",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.5.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.5.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "c48d3998b8f783bd44c7ad47c906c531",
         "timestamp": "2026-02-17T00:17:05Z"
       },
@@ -52,7 +52,7 @@
         "version": "1.6.4.0",
         "changelog": "- fix slide transition when using local/backdrop videos",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.4.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.4.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "6bb0eea92f9b226a99e3f643a0fafc44",
         "timestamp": "2026-02-16T00:25:28Z"
       },
@@ -60,7 +60,7 @@
         "version": "1.6.3.0",
         "changelog": "- fix path issue on subpath installations",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.3.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.3.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "8fe90256deeda36d0c897e8f55850d8c",
         "timestamp": "2026-02-15T01:29:59Z"
       },
@@ -68,7 +68,7 @@
         "version": "1.6.2.0",
         "changelog": "- feat: add options for local backdrops (theme videos) support and randomization features for local trailer/backdrops if more than one is available\n- feat: add option to include watched content in the random selection",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.2.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.2.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "039314bc50b39f5d11058ab8b134c6f3",
         "timestamp": "2026-02-15T00:41:18Z"
       },
@@ -76,7 +76,7 @@
         "version": "1.6.1.0",
         "changelog": "- feat: add seasonal UI logic\n- add option to also set the limits for custom ids\n- fix tv mode scroll issue\n- smaller fixes and improvements",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "8d7fa5243e17474607c9071655fa8b1f",
         "timestamp": "2026-02-14T16:18:04Z"
       },
@@ -84,7 +84,7 @@
         "version": "1.6.0.0",
         "changelog": "- add local trailer support on trailer button\n- custom media ID functionality extended with manual Jellyfin ID override support\n- fix: iOS/MacOS playback issue now?",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.6.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "e11e6011236952eea0e664e787591767",
         "timestamp": "2026-02-10T22:08:44Z"
       },
@@ -92,7 +92,7 @@
         "version": "1.5.1.2",
         "changelog": "fix layout issue",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.5.1.2/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.5.1.2/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "0c1fe94cc32f1a228c8ed82435d36743",
         "timestamp": "2026-02-10T20:23:23Z"
       },
@@ -100,7 +100,7 @@
         "version": "1.5.1.0",
         "changelog": "fix playback issue on apple devices???",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.5.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.5.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "423ab89c06ac9a12107f89cc6af066c2",
         "timestamp": "2026-02-10T01:06:38Z"
       },
@@ -108,7 +108,7 @@
         "version": "1.5.0.0",
         "changelog": "- fix: Keyboard controls in TV mode\n- Add sorting options for content\n- Add local trailer support\n- fix performance issue\n- Update mediaBarEnhanced.js and mediaBarEnhanced.css with version 4.0.1 from original repo",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.5.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.5.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "a3a13125be74e848b64769c7ced250df",
         "timestamp": "2026-02-10T01:03:19Z"
       },
@@ -116,7 +116,7 @@
         "version": "1.4.0.0",
         "changelog": "- feat: Add client-side settings feature for selected media bar settings",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.4.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.4.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "1d35e5a16535756eea8193c10fb9c11b",
         "timestamp": "2026-02-04T18:56:46Z"
       },
@@ -124,7 +124,7 @@
         "version": "1.3.0.0",
         "changelog": "- feat: Enhance custom media ID functionality with manual YouTube trailer override support",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.3.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.3.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "ebd0af368e16904242bbf82dfdfe44c2",
         "timestamp": "2026-02-04T02:08:07Z"
       },
@@ -132,7 +132,7 @@
         "version": "1.2.3.0",
         "changelog": "- Fix the issue where buttons were cut off on smaller screens such as on S24/S25.\n- Update mediaBarEnhanced.js and mediaBarEnhanced.css with version 3.0.9 from original repo",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.3.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.3.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "c3f77d9f6dfd89dfad4add9b9e804cf3",
         "timestamp": "2026-01-28T22:52:20Z"
       },
@@ -140,7 +140,7 @@
         "version": "1.2.2.0",
         "changelog": "- Fixes issues with persistent slides-container visibility",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.2.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.2.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "3ee37399f12f46147fc63220c23b7669",
         "timestamp": "2026-01-24T23:00:17Z"
       },
@@ -148,7 +148,7 @@
         "version": "1.2.1.0",
         "changelog": "- Update mediaBarEnhanced.js and mediaBarEnhanced.css with version 3.0.8 from original repo",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "491f88fa1242e7c0e2a375efb712a2db",
         "timestamp": "2026-01-23T00:09:51Z"
       },
@@ -156,7 +156,7 @@
         "version": "1.2.0.0",
         "changelog": "- Add Youtube video quality preference setting (Auto / 1080p / Highres)\n- Set preferred video quality on YouTube player based on setting",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.2.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "e04f00b39ccbc70e8e4af4510e40cdac",
         "timestamp": "2026-01-08T22:22:51Z"
       },
@@ -164,7 +164,7 @@
         "version": "1.1.2.0",
         "changelog": "- Add method to resume video playback when slideshow is active",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.1.2.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.1.2.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "63e7c662cf66ee89b7d74a4da50b24dc",
         "timestamp": "2026-01-08T15:30:09Z"
       },
@@ -172,7 +172,7 @@
         "version": "1.1.1.0",
         "changelog": "- Add method to pause all video playback when navigating away from home screen",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.1.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.1.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "c5b5d704e6d3efefd36ab678f54e921f",
         "timestamp": "2026-01-08T14:58:18Z"
       },
@@ -180,7 +180,7 @@
         "version": "1.1.0.0",
         "changelog": "- 'custom media IDs' setting is now enabled by default (no input --> random selection)\n- improve GUID handling in slideshow manager to handle seperator and description",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.1.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.1.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "110d76e6566b74eef41b6e984b2fc035",
         "timestamp": "2026-01-08T09:45:17Z"
       },
@@ -188,7 +188,7 @@
         "version": "1.0.0.0",
         "changelog": "Initial release",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.0.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/ch-bauer/jellyfin-plugin-media-bar-enhanced/releases/download/v1.0.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "c20c442e1fb63ca93c7afcfe41e5604d",
         "timestamp": "2026-01-06T23:58:04Z"
       }
