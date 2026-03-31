@@ -635,6 +635,26 @@
   gap: 10px;
 }
 
+.media-bar-language-tags {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lang-tag-badge {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #e0e0e0;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+}
+
 .runTime {
   font-family: "Archivo Narrow", sans-serif;
   display: flex;

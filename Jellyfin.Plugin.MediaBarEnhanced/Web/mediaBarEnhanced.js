@@ -1069,7 +1069,7 @@ const ApiUtils = {
 
       const response = await fetch(
         // `${STATE.jellyfinData.serverAddress}/Items/${itemId}`,
-        `${STATE.jellyfinData.serverAddress}/Items/${itemId}?Fields=Overview,RemoteTrailers,Genres,CommunityRating,CriticRating,OfficialRating,PremiereDate,ProductionYear,MediaSources,RunTimeTicks,LocalTrailerCount`,
+        `${STATE.jellyfinData.serverAddress}/Items/${itemId}?Fields=Overview,RemoteTrailers,Genres,CommunityRating,CriticRating,OfficialRating,PremiereDate,ProductionYear,MediaSources,RunTimeTicks,LocalTrailerCount,Tags`,
         {
           headers: this.getAuthHeaders(),
         }
@@ -2132,6 +2132,7 @@ const SlideCreator = {
       PremiereDate: premiereDate,
       RunTimeTicks: runtime,
       ChildCount: seasonCount,
+      Tags: tags,
     } = item;
 
     const miscInfo = SlideUtils.createElement("div", {
@@ -2182,6 +2183,41 @@ const SlideCreator = {
       miscInfo.appendChild(SlideUtils.createSeparator());
     };
 
+    const languageTags = Array.isArray(tags)
+      ? tags.filter((tag) => {
+        const normalizedTag = String(tag || "").trim().toLowerCase();
+        return normalizedTag.startsWith("language:") || normalizedTag.startsWith("subtitle:");
+      })
+      : [];
+
+    const formattedTags = languageTags
+      .map((tag) => {
+        const separatorIndex = tag.indexOf(":");
+        if (separatorIndex === -1) {
+          return String(tag || "").trim();
+        }
+
+        return tag.slice(separatorIndex + 1).trim();
+      })
+      .filter((tagText) => tagText.length > 0);
+
+    if (formattedTags.length > 0) {
+      const languageTagsContainer = SlideUtils.createElement("div", {
+        className: "media-bar-language-tags",
+      });
+
+      formattedTags.forEach((tagText) => {
+        const tagBadge = SlideUtils.createElement("span", {
+          className: "lang-tag-badge",
+          innerText: tagText,
+        });
+        languageTagsContainer.appendChild(tagBadge);
+      });
+
+      miscInfo.appendChild(languageTagsContainer);
+      miscInfo.appendChild(SlideUtils.createSeparator());
+    }
+
     // Runtime / Seasons Section
     if (seasonCount !== undefined || runtime !== undefined) {
       const container = SlideUtils.createElement("div", {
@@ -2200,6 +2236,11 @@ const SlideCreator = {
         container.innerText = endsAtText;
       }
       miscInfo.appendChild(container);
+    }
+
+    const lastMetaElement = miscInfo.lastElementChild;
+    if (lastMetaElement && lastMetaElement.classList.contains("separator-icon")) {
+      lastMetaElement.remove();
     }
 
     return miscInfo;
