@@ -190,45 +190,60 @@ namespace Jellyfin.Plugin.MediaBarEnhanced
 
         private void RegisterFileTransformation()
         {
-            _logger.LogInformation("MediaBarEnhanced Fallback. Registering file transformations.");
-            
-            List<JObject> payloads = new List<JObject>();
-
+            try
             {
-                JObject payload = new JObject();
-                payload.Add("id", "0dfac9d7-d898-4944-900b-1c1837707279"); 
-                payload.Add("fileNamePattern", "index.html");
-                payload.Add("callbackAssembly", GetType().Assembly.FullName);
-                payload.Add("callbackClass", typeof(TransformationPatches).FullName);
-                payload.Add("callbackMethod", nameof(TransformationPatches.IndexHtml));
-                
-                payloads.Add(payload);
-            }
+                _logger.LogInformation("MediaBarEnhanced Fallback. Registering file transformations.");
 
-            Assembly? fileTransformationAssembly =
-                AssemblyLoadContext.All.SelectMany(x => x.Assemblies).FirstOrDefault(x =>
-                    x.FullName?.Contains(".FileTransformation") ?? false);
+                List<JObject> payloads = new List<JObject>();
 
-            if (fileTransformationAssembly != null)
-            {
-                Type? pluginInterfaceType = fileTransformationAssembly.GetType("Jellyfin.Plugin.FileTransformation.PluginInterface");
-
-                if (pluginInterfaceType != null)
                 {
-                    foreach (JObject payload in payloads)
+                    JObject payload = new JObject();
+                    payload.Add("id", "0dfac9d7-d898-4944-900b-1c1837707279");
+                    payload.Add("fileNamePattern", "index.html");
+                    payload.Add("callbackAssembly", GetType().Assembly.FullName);
+                    payload.Add("callbackClass", typeof(TransformationPatches).FullName);
+                    payload.Add("callbackMethod", nameof(TransformationPatches.IndexHtml));
+
+                    payloads.Add(payload);
+                }
+
+                Assembly? fileTransformationAssembly =
+                    AssemblyLoadContext.All.SelectMany(x => x.Assemblies).FirstOrDefault(x =>
+                        x.FullName?.Contains(".FileTransformation") ?? false);
+
+                if (fileTransformationAssembly != null)
+                {
+                    Type? pluginInterfaceType = fileTransformationAssembly.GetType("Jellyfin.Plugin.FileTransformation.PluginInterface");
+
+                    if (pluginInterfaceType != null)
                     {
-                        pluginInterfaceType.GetMethod("RegisterTransformation")?.Invoke(null, new object?[] { payload });
+                        var registerMethod = pluginInterfaceType.GetMethod("RegisterTransformation");
+                        if (registerMethod == null)
+                        {
+                            _logger.LogWarning("FileTransformation PluginInterface is missing RegisterTransformation method.");
+                            return;
+                        }
+
+                        foreach (JObject payload in payloads)
+                        {
+                            registerMethod.Invoke(null, new object?[] { payload });
+                        }
+
+                        _logger.LogInformation("File transformations registered successfully.");
                     }
-                    _logger.LogInformation("File transformations registered successfully.");
+                    else
+                    {
+                        _logger.LogWarning("FileTransformation plugin found but PluginInterface type missing.");
+                    }
                 }
                 else
                 {
-                    _logger.LogWarning("FileTransformation plugin found but PluginInterface type missing.");
+                    _logger.LogWarning("FileTransformation plugin assembly not found. Fallback failed.");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                 _logger.LogWarning("FileTransformation plugin assembly not found. Fallback failed.");
+                _logger.LogWarning(ex, "File transformation fallback registration failed.");
             }
         }
         

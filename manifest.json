@@ -10,11 +10,11 @@
     "versions": [
       {
         "version": "1.9.1.0",
-        "changelog": "- fix pagination dot issue on mobile when showing more than ~10 dots (should now dynamically adjust the max dots threshold based on screen size)\n- add loading screen add failsafe logic\n- add option to delay trailer playback\n- add option to limit the plot width",
+        "changelog": "- add language/subtitle tag badges in slide metadata\n- include Tags in item detail fetch fields\n- bump plugin version to 1.9.1.0",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.9.0.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
+        "sourceUrl": "https://github.com/CodeDevMLH/jellyfin-plugin-media-bar-enhanced/releases/download/v1.9.1.0/Jellyfin.Plugin.MediaBarEnhanced.zip",
         "checksum": "d92439ecfd5b7ce4a54169d8f07b6275",
-        "timestamp": "2026-03-24T01:29:16Z"
+        "timestamp": "2026-03-31T00:00:00Z"
       },
       {
         "version": "1.8.0.0",

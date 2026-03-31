@@ -31,13 +31,20 @@ namespace Jellyfin.Plugin.MediaBarEnhanced
             _loggerFactory = loggerFactory;
             _scriptInjector = new ScriptInjector(applicationPaths, loggerFactory.CreateLogger<ScriptInjector>());
 
-            if (Configuration.IsEnabled)
+            try
             {
-                _scriptInjector.Inject();
+                if (Configuration.IsEnabled)
+                {
+                    _scriptInjector.Inject();
+                }
+                else
+                {
+                    _scriptInjector.Remove();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _scriptInjector.Remove();
+                loggerFactory.CreateLogger<MediaBarEnhancedPlugin>().LogError(ex, "Startup injection failed. Plugin will continue running without web resource injection.");
             }
         }
 
@@ -47,13 +54,20 @@ namespace Jellyfin.Plugin.MediaBarEnhanced
             var oldConfig = Configuration;
             base.UpdateConfiguration(configuration);
 
-            if (Configuration.IsEnabled && !oldConfig.IsEnabled)
+            try
             {
-                _scriptInjector.Inject();
+                if (Configuration.IsEnabled && !oldConfig.IsEnabled)
+                {
+                    _scriptInjector.Inject();
+                }
+                else if (!Configuration.IsEnabled && oldConfig.IsEnabled)
+                {
+                    _scriptInjector.Remove();
+                }
             }
-            else if (!Configuration.IsEnabled && oldConfig.IsEnabled)
+            catch (Exception ex)
             {
-                _scriptInjector.Remove();
+                _loggerFactory.CreateLogger<MediaBarEnhancedPlugin>().LogError(ex, "Failed to update web resource injection after configuration change.");
             }
         }
 
